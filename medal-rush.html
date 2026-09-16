@@ -7,7 +7,7 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <meta name="description" content="Physics-based medal pusher prototype." />
     <title>MEDAL RUSH</title>
-    <script type="module" crossorigin src="./assets/medal-rush-1LcTbpPp.js"></script>
+    <script type="module" crossorigin src="./assets/medal-rush-D49HGd7o.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/Geometry-CZeH09JC.js">
     <link rel="modulepreload" crossorigin href="./assets/canvasUtils-UVdGlnmF.js">
     <link rel="modulepreload" crossorigin href="./assets/init-TBhdXl9e.js">
@@ -15,26 +15,24 @@
     <link rel="modulepreload" crossorigin href="./assets/lib-DopBM5ix.js">
     <link rel="modulepreload" crossorigin href="./assets/getTextureBatchBindGroup-DjWmh_0t.js">
     <link rel="modulepreload" crossorigin href="./assets/CanvasRenderer-DiGVCI0p.js">
-    <link rel="stylesheet" crossorigin href="./assets/medal-rush-CrAp-rCb.css">
+    <link rel="stylesheet" crossorigin href="./assets/medal-rush-DsfWnAtv.css">
   </head>
   <body>
     <main id="medal-shell" aria-label="メダルプッシャー">
       <div id="medal-canvas-host"></div>
 
-      <section class="roulette-panel" aria-label="ルーレット">
-        <div class="roulette-pointer" aria-hidden="true"></div>
-        <div id="roulette-wheel" class="roulette-wheel" aria-hidden="true">
-          <span style="--i:0">1</span>
-          <span style="--i:1">3</span>
-          <span style="--i:2">5</span>
-          <span style="--i:3">10</span>
-          <span style="--i:4">2</span>
-          <span style="--i:5">5</span>
-          <span style="--i:6">20</span>
-          <span style="--i:7">3</span>
+      <section class="slot-panel" aria-label="段差ゲートスロット">
+        <div class="slot-topline">
+          <span class="slot-title">STEP SLOT</span>
+          <span id="slot-status" class="slot-status" data-spins="0">GATE</span>
         </div>
-        <div id="roulette-result" class="roulette-result">READY</div>
-        <div id="roulette-status" class="roulette-status" data-spins="0">GATE</div>
+        <div class="slot-machine" aria-live="polite">
+          <div class="slot-payline" aria-hidden="true"></div>
+          <div class="slot-reel"><strong id="slot-reel-0">1</strong></div>
+          <div class="slot-reel"><strong id="slot-reel-1">1</strong></div>
+          <div class="slot-reel"><strong id="slot-reel-2">1</strong></div>
+        </div>
+        <div id="slot-result" class="slot-result">GATE → SPIN</div>
       </section>
 
       <div id="drop-guide" class="drop-guide" aria-hidden="true"></div>
