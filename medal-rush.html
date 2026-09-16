@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#100c08" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta name="description" content="Physics-based endless medal pusher prototype." />
+    <title>MEDAL RUSH</title>
+    <script type="module" crossorigin src="./assets/medal-rush-BPFah2J-.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/Geometry-CZeH09JC.js">
+    <link rel="modulepreload" crossorigin href="./assets/canvasUtils-UVdGlnmF.js">
+    <link rel="modulepreload" crossorigin href="./assets/init-TBhdXl9e.js">
+    <link rel="modulepreload" crossorigin href="./assets/RenderTargetSystem-aDktrMpj.js">
+    <link rel="modulepreload" crossorigin href="./assets/lib-DopBM5ix.js">
+    <link rel="modulepreload" crossorigin href="./assets/getTextureBatchBindGroup-DjWmh_0t.js">
+    <link rel="modulepreload" crossorigin href="./assets/CanvasRenderer-DiGVCI0p.js">
+    <link rel="stylesheet" crossorigin href="./assets/medal-rush-CukRZGoT.css">
+  </head>
+  <body>
+    <main id="medal-shell" aria-label="メダルプッシャー">
+      <div id="medal-canvas-host"></div>
+
+      <div id="drop-guide" class="drop-guide" aria-hidden="true"></div>
+      <div id="input-hint" class="input-hint">TAP / HOLD TO DROP</div>
+      <div id="payout-pop" class="payout-pop" aria-live="polite"></div>
+
+      <section class="medal-hud" aria-label="ゲーム情報">
+        <div class="meter-row">
+          <div class="rain-meter" aria-label="メダルレインゲージ"><div id="rain-fill"></div></div>
+          <span id="time-value">00:00</span>
+        </div>
+        <div class="medal-stats">
+          <div><span>PAYOUT</span><strong id="payout-value">0</strong></div>
+          <div><span>ON TABLE</span><strong id="table-value">0</strong></div>
+          <div><span>DROPPED</span><strong id="dropped-value">0</strong></div>
+          <button id="pause-button" type="button" aria-label="一時停止">Ⅱ</button>
+        </div>
+      </section>
+
+      <section id="pause-panel" class="pause-panel" hidden>
+        <div class="pause-card">
+          <span>MEDAL FLOW SUSPENDED</span>
+          <h1>PAUSED</h1>
+          <button id="resume-button" type="button">RESUME</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
