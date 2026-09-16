@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#050713" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta name="description" content="Endless neon block breaker prototype." />
+    <title>OVERDRIVE BREAKER</title>
+    <script type="module" crossorigin src="./assets/index-Ddv3g98J.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/Geometry-BnBtZe5G.js">
+    <link rel="modulepreload" crossorigin href="./assets/canvasUtils-BdbY8HhG.js">
+    <link rel="modulepreload" crossorigin href="./assets/init-BznYXipG.js">
+    <link rel="modulepreload" crossorigin href="./assets/RenderTargetSystem-m0QiHY3a.js">
+    <link rel="modulepreload" crossorigin href="./assets/getTextureBatchBindGroup-CtAvoxrS.js">
+    <link rel="modulepreload" crossorigin href="./assets/CanvasRenderer-B5PH-i6B.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-D1IvljsR.css">
+  </head>
+  <body>
+    <main id="game-shell" aria-label="OVERDRIVE BREAKER">
+      <div id="canvas-host"></div>
+
+      <section class="hud hud-top" aria-live="polite">
+        <div class="brand">
+          <span class="brand-kicker">ENDLESS DESTRUCTION</span>
+          <strong>OVERDRIVE BREAKER</strong>
+        </div>
+        <button id="pause-button" class="icon-button" type="button" aria-label="一時停止">Ⅱ</button>
+      </section>
+
+      <section class="stats" aria-label="ゲーム統計">
+        <div><span class="stat-label">DESTROYED</span><strong id="destroyed-value">0</strong></div>
+        <div><span class="stat-label">BALLS</span><strong id="balls-value">1</strong></div>
+        <div><span class="stat-label">CHAIN</span><strong id="chain-value">0</strong></div>
+      </section>
+
+      <section class="fever-meter" aria-label="フィーバーゲージ">
+        <div class="fever-meta">
+          <span id="mode-label">FLOW</span>
+          <span id="time-value">00:00</span>
+        </div>
+        <div class="meter-track"><div id="meter-fill" class="meter-fill"></div></div>
+      </section>
+
+      <div id="flow-status" class="flow-status" role="status"></div>
+      <div id="milestone" class="milestone" aria-live="assertive"></div>
+      <div id="hint" class="hint">DRAG TO MOVE</div>
+      <div id="screen-flash" class="screen-flash"></div>
+
+      <section id="pause-panel" class="pause-panel" hidden>
+        <div class="pause-card">
+          <span class="pause-kicker">FLOW SUSPENDED</span>
+          <h1>PAUSED</h1>
+          <p>止めない限り、ブロックは流れ続けます。</p>
+          <button id="resume-button" type="button">RESUME</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
