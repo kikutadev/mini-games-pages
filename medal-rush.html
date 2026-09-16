@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#100c08" />
+    <meta name="theme-color" content="#0b0805" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <meta name="description" content="Physics-based endless medal pusher prototype." />
+    <meta name="description" content="Physics-based medal pusher prototype." />
     <title>MEDAL RUSH</title>
-    <script type="module" crossorigin src="./assets/medal-rush-CWv6k5yD.js"></script>
+    <script type="module" crossorigin src="./assets/medal-rush-1LcTbpPp.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/Geometry-CZeH09JC.js">
     <link rel="modulepreload" crossorigin href="./assets/canvasUtils-UVdGlnmF.js">
     <link rel="modulepreload" crossorigin href="./assets/init-TBhdXl9e.js">
@@ -15,22 +15,38 @@
     <link rel="modulepreload" crossorigin href="./assets/lib-DopBM5ix.js">
     <link rel="modulepreload" crossorigin href="./assets/getTextureBatchBindGroup-DjWmh_0t.js">
     <link rel="modulepreload" crossorigin href="./assets/CanvasRenderer-DiGVCI0p.js">
-    <link rel="stylesheet" crossorigin href="./assets/medal-rush-D2K94Vay.css">
+    <link rel="stylesheet" crossorigin href="./assets/medal-rush-CrAp-rCb.css">
   </head>
   <body>
     <main id="medal-shell" aria-label="メダルプッシャー">
       <div id="medal-canvas-host"></div>
+
+      <section class="roulette-panel" aria-label="ルーレット">
+        <div class="roulette-pointer" aria-hidden="true"></div>
+        <div id="roulette-wheel" class="roulette-wheel" aria-hidden="true">
+          <span style="--i:0">1</span>
+          <span style="--i:1">3</span>
+          <span style="--i:2">5</span>
+          <span style="--i:3">10</span>
+          <span style="--i:4">2</span>
+          <span style="--i:5">5</span>
+          <span style="--i:6">20</span>
+          <span style="--i:7">3</span>
+        </div>
+        <div id="roulette-result" class="roulette-result">READY</div>
+        <div id="roulette-status" class="roulette-status" data-spins="0">GATE</div>
+      </section>
 
       <div id="drop-guide" class="drop-guide" aria-hidden="true"></div>
       <div id="input-hint" class="input-hint">TAP / HOLD TO DROP</div>
       <div id="payout-pop" class="payout-pop" aria-live="polite"></div>
 
       <section class="medal-hud" aria-label="ゲーム情報">
-        <div class="time-row"><span>PHYSICS PUSHER</span><strong id="time-value">00:00</strong></div>
         <div class="medal-stats">
           <div><span>PAYOUT</span><strong id="payout-value">0</strong></div>
           <div><span>ON TABLE</span><strong id="table-value">0</strong></div>
           <div><span>DROPPED</span><strong id="dropped-value">0</strong></div>
+          <div class="time-cell"><span>TIME</span><strong id="time-value">00:00</strong></div>
           <button id="pause-button" type="button" aria-label="一時停止">Ⅱ</button>
         </div>
       </section>
