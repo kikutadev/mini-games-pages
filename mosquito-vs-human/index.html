@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#d88f76" />
+  <meta name="description" content="長押しで血を吸い、手が飛んでくる直前に離して逃げるワンボタンミニゲーム。" />
+  <title>蚊 VS 人類</title>
+  <script type="module" crossorigin src="./assets/index-CCOAPzVO.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CzycjBMI.css">
+</head>
+<body>
+  <main id="app">
+    <canvas id="game-canvas" aria-label="蚊 VS 人類 ゲーム画面"></canvas>
+
+    <header id="hud" class="hud" aria-live="polite">
+      <div><span>吸血量</span><strong id="blood-value">0.0 μL</strong></div>
+      <div class="hud-best"><span>BEST</span><strong id="best-value">0.0 μL</strong></div>
+    </header>
+
+    <div id="first-touch-guide" class="first-touch-guide">
+      <strong>長押しで吸え</strong>
+      <span>離して逃げろ</span>
+    </div>
+
+    <div id="callout" class="callout" hidden></div>
+
+    <section id="result" class="result" hidden>
+      <div class="result-card">
+        <span class="result-kicker">人類の勝ち</span>
+        <strong id="result-blood" class="result-blood">0.0 μL</strong>
+        <div class="result-stats">
+          <div><span>ギリ逃げ</span><strong id="result-close">0回</strong></div>
+          <div><span>最長吸血</span><strong id="result-longest">0.00秒</strong></div>
+        </div>
+        <div id="new-best" class="new-best" hidden>NEW BEST</div>
+        <button id="retry-button" type="button">もう一回</button>
+      </div>
+    </section>
+  </main>
+
+</body>
+</html>
