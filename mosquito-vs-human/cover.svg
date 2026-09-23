@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="蚊 VS 人類 cover">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#efb097"/>
+      <stop offset=".48" stop-color="#c27b69"/>
+      <stop offset="1" stop-color="#7b4039"/>
+    </linearGradient>
+    <linearGradient id="hand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7c2a9"/>
+      <stop offset=".55" stop-color="#d9947e"/>
+      <stop offset="1" stop-color="#a85e54"/>
+    </linearGradient>
+    <radialGradient id="abd" cx="35%" cy="28%" r="78%">
+      <stop offset="0" stop-color="#f47171"/>
+      <stop offset=".5" stop-color="#b11f32"/>
+      <stop offset="1" stop-color="#501820"/>
+    </radialGradient>
+    <filter id="blur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <g opacity=".16" fill="#6f302b">
+    <circle cx="90" cy="102" r="3"/><circle cx="210" cy="185" r="2.5"/><circle cx="343" cy="86" r="2"/>
+    <circle cx="492" cy="166" r="3"/><circle cx="605" cy="78" r="2.5"/><circle cx="730" cy="218" r="2"/>
+    <circle cx="888" cy="98" r="3"/><circle cx="1055" cy="210" r="2.5"/><circle cx="1092" cy="432" r="2"/>
+    <circle cx="945" cy="558" r="3"/><circle cx="622" cy="572" r="2"/><circle cx="318" cy="531" r="2.5"/>
+    <circle cx="128" cy="446" r="2"/>
+  </g>
+  <path d="M64 468C206 431 323 452 461 523" fill="none" stroke="#5a6272" stroke-opacity=".16" stroke-width="6"/>
+  <path d="M94 482C180 470 224 500 292 548" fill="none" stroke="#5a6272" stroke-opacity=".1" stroke-width="3"/>
+
+  <g transform="translate(354 319)">
+    <ellipse cx="18" cy="74" rx="130" ry="65" fill="#4f201d" opacity=".25" filter="url(#blur)"/>
+    <g stroke="#211b1d" stroke-linecap="round" stroke-linejoin="round">
+      <g fill="none" stroke-width="8">
+        <path d="M-13 3L-87 45L-128 91"/>
+        <path d="M-10 8L-112 12L-160 37"/>
+        <path d="M-6 14L-100 -20L-147 -55"/>
+        <path d="M13 3L88 44L129 90"/>
+        <path d="M10 8L112 12L159 37"/>
+        <path d="M6 14L101 -21L147 -55"/>
+      </g>
+      <ellipse cx="-29" cy="-24" rx="58" ry="20" fill="#f8ecdd" fill-opacity=".66" stroke="#61534e" stroke-width="3" transform="rotate(-17 -29 -24)"/>
+      <ellipse cx="29" cy="-24" rx="58" ry="20" fill="#f8ecdd" fill-opacity=".66" stroke="#61534e" stroke-width="3" transform="rotate(17 29 -24)"/>
+      <ellipse cx="0" cy="-1" rx="27" ry="39" fill="#30292b" stroke-width="5"/>
+      <circle cx="0" cy="-47" r="22" fill="#1f1a1c" stroke-width="5"/>
+      <path d="M0 5C-19 43 -22 102 0 148C22 102 19 43 0 5Z" fill="url(#abd)" stroke-width="6"/>
+      <path d="M-6 -67L-28 -103M6 -67L28 -103" fill="none" stroke-width="4"/>
+      <path d="M2 -69L6 -130" fill="none" stroke-width="6"/>
+    </g>
+  </g>
+
+  <g transform="translate(932 375) rotate(-9)">
+    <ellipse cx="-22" cy="86" rx="220" ry="94" fill="#54231f" opacity=".26" filter="url(#blur)"/>
+    <g fill="url(#hand)" stroke="#8d4d43" stroke-width="5">
+      <rect x="-240" y="-198" width="66" height="224" rx="33"/>
+      <rect x="-160" y="-242" width="70" height="268" rx="35"/>
+      <rect x="-76" y="-229" width="68" height="255" rx="34"/>
+      <rect x="5" y="-183" width="61" height="210" rx="31"/>
+      <path d="M-257 6C-257 -56 -204 -95 -141 -98C-75 -101 2 -95 71 -60C122 -34 157 14 152 77C146 159 93 226 28 264L-164 257C-220 203 -256 130 -257 6Z"/>
+      <path d="M99 24C151 -12 211 -4 238 28C262 57 249 93 216 112C178 134 136 113 104 83Z"/>
+    </g>
+    <g fill="none" stroke="#7a7484" stroke-opacity=".34" stroke-width="4" stroke-linecap="round">
+      <path d="M-187 25C-132 67 -133 143 -162 205"/>
+      <path d="M-64 22C-30 92 -37 169 -10 222"/>
+    </g>
+  </g>
+
+  <g transform="translate(88 74)">
+    <rect x="0" y="0" width="330" height="86" rx="43" fill="#321512" fill-opacity=".78"/>
+    <text x="32" y="56" font-family="system-ui, sans-serif" font-size="44" font-weight="900" fill="#fff3df">蚊 VS 人類</text>
+  </g>
+</svg>
