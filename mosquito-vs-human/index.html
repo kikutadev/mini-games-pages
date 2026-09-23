@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="theme-color" content="#d88f76" />
-  <meta name="description" content="長押しで血を吸い、手が飛んでくる直前に離して逃げるワンボタンミニゲーム。" />
+  <meta name="description" content="長押しで吸血し、手が来た方向を見て逆へスワイプして逃げる一本指ミニゲーム。" />
   <title>蚊 VS 人類</title>
-  <script type="module" crossorigin src="./assets/index-D7rTDOdU.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CzycjBMI.css">
+  <script type="module" crossorigin src="./assets/index-ijtIQ3D_.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BEXX3O4g.css">
 </head>
 <body>
   <main id="app">
@@ -27,14 +27,14 @@
 
     <section id="result" class="result" hidden>
       <div class="result-card">
-        <span class="result-kicker">人類の勝ち</span>
+        <span class="result-kicker">SPLAT / 人類の勝ち</span>
         <strong id="result-blood" class="result-blood">0.0 μL</strong>
         <div class="result-stats">
           <div><span>ギリ逃げ</span><strong id="result-close">0回</strong></div>
           <div><span>最長吸血</span><strong id="result-longest">0.00秒</strong></div>
         </div>
         <div id="new-best" class="new-best" hidden>NEW BEST</div>
-        <button id="retry-button" type="button">もう一回</button>
+        <button id="retry-button" type="button">もう一回吸う</button><small class="retry-hint">画面タップでも再挑戦</small>
       </div>
     </section>
   </main>
