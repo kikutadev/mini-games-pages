@@ -7,8 +7,8 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Cpath fill=%27%23ff6a19%27 d=%27M32 5c11 0 19 9 19 20 0 6-3 10-3 15 0 7 7 7 7 12 0 4-3 7-8 7-6 0-7-6-11-6-3 0-2 6-4 6s-2-6-4-6c-4 0-5 6-11 6-5 0-8-3-8-7 0-5 7-5 7-12 0-5-3-9-3-15C13 14 21 5 32 5z%27/%3E%3C/svg%3E" />
   <meta name="description" content="INKWAVE — 4 v 4 turf-war shooter recreation." />
   <title>INKWAVE — Turf Riot</title>
-  <script type="module" crossorigin src="./assets/index-D_fkWh95.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-i6CqWlZu.css">
+  <script type="module" crossorigin src="./assets/index-D34S7WoH.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Blhm1LWM.css">
 </head>
 <body>
 <div id="app">
@@ -47,14 +47,14 @@
       <p class="menu-help"><b></b>Jump into a 4 v 4 Turf War against bots</p>
     </nav>
     <section class="profile-card">
-      <div class="profile-head"><div class="squid-icon">♠</div><div><h3>Player</h3><p>◈ FRESH RECRUIT</p></div></div>
-      <div class="level-row"><b>LV 1</b><div class="xp-track"><i></i></div><span>0 / 1,150 XP</span></div>
-      <div class="stat-row"><div><b>0</b><span>WINS</span></div><div><b>0</b><span>MATCHES</span></div><div class="next-rank"><small>NEXT RANK</small><b>LV 5</b></div></div>
+      <div class="profile-head"><div class="squid-icon">♠</div><div><h3>Player</h3><p id="profile-rank">◈ FRESH RECRUIT</p></div></div>
+      <div class="level-row"><b id="profile-level">LV 1</b><div class="xp-track"><i id="profile-xp-fill"></i></div><span id="profile-xp">0 / 1,150 XP</span></div>
+      <div class="stat-row"><div><b id="profile-wins">0</b><span>WINS</span></div><div><b id="profile-matches">0</b><span>MATCHES</span></div><div class="next-rank"><small>NEXT RANK</small><b id="profile-next">LV 5</b></div></div>
     </section>
     <section class="loadout-card">
       <small>CURRENT LOADOUT</small>
       <div class="weapon-row"><span class="weapon-icon">▰</span><div><strong>Spritzer</strong><em>SHOOTER</em></div></div>
-      <div class="ability-row"><span>◉ Splat Bomb</span><span>♨ Tidal Slam</span></div>
+      <div class="ability-row"><span>♨ Tidal Slam</span><span>Q / SPECIAL</span></div>
     </section>
     <span class="version">v1.0.0</span>
     <div class="key-help"><kbd>Enter</kbd> Select <kbd>Esc</kbd> Title</div>
@@ -65,9 +65,9 @@
     <div class="setup-body">
       <label class="section-label">▮ STAGE</label>
       <div class="stage-cards">
-        <button class="stage-card active" data-stage="tidewater"><div class="thumb tidewater"><span></span></div><div class="stage-meta"><b>☀ DAY</b><em>SELECTED</em></div><h3>Tidewater Plaza</h3><p>A sun-bleached harbor plaza on the edge of the sea.</p></button>
-        <button class="stage-card" data-stage="kelpline"><div class="thumb kelpline"><span></span></div><div class="stage-meta"><b>☀ DAY</b></div><h3>Kelpline Terminal</h3><p>Container yard with grate catwalks, a sunken trench and a steel gantry deck.</p></button>
-        <button class="stage-card" data-stage="dusk"><div class="thumb dusk"><span></span></div><div class="stage-meta"><b>◐ DUSK</b></div><h3>Tidewater at Dusk</h3><p>Same plaza, golden hour. Lights coming on across the bay.</p></button>
+        <button class="stage-card active" data-stage="tidewater"><div class="thumb tidewater"><img src="./stages/tidewater.png" alt="Tidewater Plaza preview" /></div><div class="stage-meta"><b>☀ DAY</b><em>SELECTED</em></div><h3>Tidewater Plaza</h3><p>A sun-bleached harbor plaza on the edge of the sea.</p></button>
+        <button class="stage-card" data-stage="kelpline"><div class="thumb kelpline"><img src="./stages/kelpline.png" alt="Kelpline Terminal preview" /></div><div class="stage-meta"><b>☀ DAY</b></div><h3>Kelpline Terminal</h3><p>Container yard with grate catwalks, a sunken trench and a steel gantry deck.</p></button>
+        <button class="stage-card" data-stage="dusk"><div class="thumb dusk"><img src="./stages/dusk.png" alt="Tidewater at Dusk preview" /></div><div class="stage-meta"><b>◐ DUSK</b></div><h3>Tidewater at Dusk</h3><p>Same plaza, golden hour. Lights coming on across the bay.</p></button>
       </div>
       <section class="setup-options">
         <div class="option-line"><b>♟ BOT SKILL</b><div class="segmented" id="skill-seg"><button>●○○ CHILL</button><button class="active">●●○ FRESH</button><button>●●● FIERCE</button></div></div>
@@ -92,7 +92,7 @@
   </div>
 
   <div id="simple-modal" class="overlay-screen modal-overlay">
-    <section class="modal-card"><div class="section-label">INKWAVE</div><h2 id="simple-title">LOADOUT</h2><p id="simple-text"></p><button id="simple-back" class="modal-ok">BACK</button></section>
+    <section class="modal-card"><div class="section-label">INKWAVE</div><h2 id="simple-title">LOADOUT</h2><div id="simple-text" class="simple-body"></div><button id="simple-back" class="modal-ok">BACK</button></section>
   </div>
 
   <div id="hud">
@@ -115,12 +115,13 @@
     </div>
   </div>
 
+  <div id="hit-flash" aria-hidden="true"></div>
   <div id="countdown" class="countdown"></div>
 
   <div id="results" class="overlay-screen results-overlay">
     <section class="result-card">
       <div class="section-label">FINAL TURF</div><h2 id="result-title">VICTORY!</h2>
-      <div class="result-bars"><div class="result-row orange-row"><span>ORANGE</span><div><i id="result-a"></i></div><b id="result-a-text">0%</b></div><div class="result-row cyan-row"><span>CYAN</span><div><i id="result-b"></i></div><b id="result-b-text">0%</b></div></div>
+      <div class="result-body"><canvas id="result-map" width="360" height="240"></canvas><div><div class="result-bars"><div class="result-row orange-row"><span>ORANGE</span><div><i id="result-a"></i></div><b id="result-a-text">0%</b></div><div class="result-row cyan-row"><span>CYAN</span><div><i id="result-b"></i></div><b id="result-b-text">0%</b></div></div><div class="result-stats"><div><small>TURF POINTS</small><b id="result-points">0p</b></div><div><small>XP EARNED</small><b id="result-xp">+0 XP</b></div></div></div></div>
       <button id="again" class="modal-ok">REMATCH</button><button id="home" class="modal-back">TITLE</button>
     </section>
   </div>
