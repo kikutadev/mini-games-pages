@@ -1,34 +1,129 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>INKWAVE — Turf Riot</title>
-<meta name="description" content="INKWAVE: a 4v4 turf-war ink shooter. Paint the plaza, swim through your ink, splat the other team.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 4c8 0 14 7 14 16 0 6-2 9-2 13 0 5 6 6 6 12 0 4-3 6-6 6-4 0-5-4-8-4s-2 9-4 9-2-9-4-9-4 4-8 4c-3 0-6-2-6-6 0-6 6-7 6-12 0-4-2-7-2-13C18 11 24 4 32 4z' fill='%23ff8a14'/%3E%3Ccircle cx='26' cy='22' r='4' fill='%23fff'/%3E%3Ccircle cx='38' cy='22' r='4' fill='%23fff'/%3E%3C/svg%3E">
-<link rel="preload" href="./assets/TitanOne-latin-CPku0rjU.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="./assets/Rubik-latin-0V_ixqQm.woff2" as="font" type="font/woff2" crossorigin>
-<style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1020; user-select: none; -webkit-user-select: none; }
-  #app { position: fixed; inset: 0; }
-  #app canvas { display: block; width: 100%; height: 100%; outline: none; }
-  #ui-root { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
-  #fade { position: fixed; inset: 0; background: #0d1020; opacity: 1; pointer-events: all; z-index: 50; transition: opacity 600ms ease; }
-  #boot-error { display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 60; color: #fff; font: 600 16px/1.4 system-ui, sans-serif; background: #c0263d; padding: 16px 20px; border-radius: 12px; max-width: 520px; }
-</style>
-
-  <script type="module" crossorigin src="./assets/index-CC0SsfyV.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/three.module-CZjhBpWN.js">
-  <link rel="stylesheet" crossorigin href="./assets/index-F8narGKi.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#10142a" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Cpath fill=%27%23ff6a19%27 d=%27M32 5c11 0 19 9 19 20 0 6-3 10-3 15 0 7 7 7 7 12 0 4-3 7-8 7-6 0-7-6-11-6-3 0-2 6-4 6s-2-6-4-6c-4 0-5 6-11 6-5 0-8-3-8-7 0-5 7-5 7-12 0-5-3-9-3-15C13 14 21 5 32 5z%27/%3E%3C/svg%3E" />
+  <meta name="description" content="INKWAVE — 4 v 4 turf-war shooter recreation." />
+  <title>INKWAVE — Turf Riot</title>
+  <script type="module" crossorigin src="./assets/index-D_fkWh95.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-i6CqWlZu.css">
 </head>
 <body>
-<div id="app"></div>
-<div id="ui-root"></div>
-<div id="fade"></div>
-<div id="boot-error"></div>
-<script>
-  // fade in once the loading screen is mounted
-  window.addEventListener('DOMContentLoaded', () => setTimeout(() => { const f = document.getElementById('fade'); if (f) { f.style.opacity = '0'; f.style.pointerEvents = 'none'; } }, 60));
-</script>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <div id="loading" class="overlay-screen active">
+    <div class="loading-haze"></div>
+    <div class="logo logo-loading" aria-label="INKWAVE">
+      <div class="logo-splat"></div><span>INKWAVE</span><b>TURF RIOT</b>
+    </div>
+    <div class="loading-progress"><i id="loading-fill"></i></div>
+    <strong id="loading-percent">0%</strong>
+    <div class="loading-state">MIXING INK...</div>
+    <div class="tip-strip"><em>TIP</em><span id="loading-tip">Paint your feet to make a fast escape route.</span></div>
+    <span class="version">v1.0.0</span>
+  </div>
+
+  <div id="intro" class="overlay-screen">
+    <div class="logo logo-hero" aria-label="INKWAVE">
+      <div class="logo-splat"></div><span>INKWAVE</span><b>TURF RIOT</b>
+    </div>
+    <div class="press-start">PRESS ANY KEY<small>OR CLICK TO START</small></div>
+    <span class="version">v1.0.0</span>
+  </div>
+
+  <div id="main-menu" class="overlay-screen menu-overlay">
+    <div class="logo logo-corner" aria-label="INKWAVE">
+      <div class="logo-splat"></div><span>INKWAVE</span><b>TURF RIOT</b>
+    </div>
+    <nav class="main-nav">
+      <button id="play" class="nav-btn selected"><i>▶</i><div><strong>PLAY</strong><small>Turf War · 4 v 4</small></div></button>
+      <button id="loadout" class="nav-btn"><i>⚑</i><strong>LOADOUT</strong></button>
+      <button id="settings" class="nav-btn"><i>⚙</i><strong>SETTINGS</strong></button>
+      <button id="how" class="nav-btn"><i>?</i><strong>HOW TO PLAY</strong></button>
+      <button id="credits" class="nav-btn"><i>★</i><strong>CREDITS</strong></button>
+      <p class="menu-help"><b></b>Jump into a 4 v 4 Turf War against bots</p>
+    </nav>
+    <section class="profile-card">
+      <div class="profile-head"><div class="squid-icon">♠</div><div><h3>Player</h3><p>◈ FRESH RECRUIT</p></div></div>
+      <div class="level-row"><b>LV 1</b><div class="xp-track"><i></i></div><span>0 / 1,150 XP</span></div>
+      <div class="stat-row"><div><b>0</b><span>WINS</span></div><div><b>0</b><span>MATCHES</span></div><div class="next-rank"><small>NEXT RANK</small><b>LV 5</b></div></div>
+    </section>
+    <section class="loadout-card">
+      <small>CURRENT LOADOUT</small>
+      <div class="weapon-row"><span class="weapon-icon">▰</span><div><strong>Spritzer</strong><em>SHOOTER</em></div></div>
+      <div class="ability-row"><span>◉ Splat Bomb</span><span>♨ Tidal Slam</span></div>
+    </section>
+    <span class="version">v1.0.0</span>
+    <div class="key-help"><kbd>Enter</kbd> Select <kbd>Esc</kbd> Title</div>
+  </div>
+
+  <div id="setup" class="overlay-screen setup-overlay">
+    <header class="setup-title"><button id="setup-back">‹ <small>Esc</small></button><div><h2>TURF WAR</h2><p>Ink the most turf in 4 v 4 against bots</p></div></header>
+    <div class="setup-body">
+      <label class="section-label">▮ STAGE</label>
+      <div class="stage-cards">
+        <button class="stage-card active" data-stage="tidewater"><div class="thumb tidewater"><span></span></div><div class="stage-meta"><b>☀ DAY</b><em>SELECTED</em></div><h3>Tidewater Plaza</h3><p>A sun-bleached harbor plaza on the edge of the sea.</p></button>
+        <button class="stage-card" data-stage="kelpline"><div class="thumb kelpline"><span></span></div><div class="stage-meta"><b>☀ DAY</b></div><h3>Kelpline Terminal</h3><p>Container yard with grate catwalks, a sunken trench and a steel gantry deck.</p></button>
+        <button class="stage-card" data-stage="dusk"><div class="thumb dusk"><span></span></div><div class="stage-meta"><b>◐ DUSK</b></div><h3>Tidewater at Dusk</h3><p>Same plaza, golden hour. Lights coming on across the bay.</p></button>
+      </div>
+      <section class="setup-options">
+        <div class="option-line"><b>♟ BOT SKILL</b><div class="segmented" id="skill-seg"><button>●○○ CHILL</button><button class="active">●●○ FRESH</button><button>●●● FIERCE</button></div></div>
+        <p>Balanced bots that push turf and fight back.</p>
+        <div class="option-line"><b>◷ MATCH LENGTH</b><div class="segmented" id="length-seg"><button data-sec="90">90 SEC</button><button class="active" data-sec="180">3 MIN</button></div></div>
+      </section>
+      <div class="setup-footer">
+        <button class="weapon-select"><span class="weapon-icon">▰</span><div><small>YOUR WEAPON</small><strong>Spritzer</strong></div><em>✎ CHANGE</em></button>
+        <button id="start-match" class="start-btn"><span>▶</span><div><strong>START!</strong><small id="start-summary">Tidewater Plaza · Fresh · 3 MIN</small></div><em>✓ READY</em></button>
+      </div>
+    </div>
+    <div class="key-help"><kbd>Enter</kbd> Select <kbd>←</kbd><kbd>→</kbd> Change <kbd>Esc</kbd> Back</div>
+  </div>
+
+  <div id="how-screen" class="overlay-screen modal-overlay">
+    <section class="modal-card">
+      <div class="section-label">FIELD MANUAL</div><h2>PAINT. SWIM. SPLAT.</h2>
+      <div class="how-grid"><article><b>MOVE</b><span>WASD / left stick</span></article><article><b>AIM</b><span>Mouse / drag right</span></article><article><b>FIRE</b><span>Left click / SHOOT</span></article><article><b>SWIM</b><span>Shift / SWIM</span></article></div>
+      <p>Cover the arena with your team's ink. Swimming in your own color is faster. Fire at rivals to splat them and send them back to spawn.</p>
+      <button id="how-back" class="modal-ok">GOT IT</button>
+    </section>
+  </div>
+
+  <div id="simple-modal" class="overlay-screen modal-overlay">
+    <section class="modal-card"><div class="section-label">INKWAVE</div><h2 id="simple-title">LOADOUT</h2><p id="simple-text"></p><button id="simple-back" class="modal-ok">BACK</button></section>
+  </div>
+
+  <div id="hud">
+    <div class="battle-top">
+      <div id="orange-icons" class="team-icons orange-icons"></div>
+      <div class="battle-timer" id="clock">3:00</div>
+      <div id="cyan-icons" class="team-icons cyan-icons"></div>
+    </div>
+    <div class="special-meter"><div class="special-icon">⬇</div><strong id="special-text">0%</strong></div>
+    <div class="points-pill">◉ <strong id="points">0</strong><small>p</small></div>
+    <div class="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
+    <canvas id="minimap" width="220" height="220"></canvas>
+    <div class="map-label"><kbd>TAB</kbd> MAP</div>
+    <div id="ko-feed" class="ko-feed"></div>
+    <div id="match-prompt" class="match-prompt">Paint the ground — most turf wins!</div>
+    <div class="ink-hud"><span id="ink-warning">INK</span><div><i id="ink-fill"></i></div><b id="ink-number">100%</b></div>
+    <div class="mobile-controls">
+      <div id="joy-zone"><div id="joy-knob"></div></div>
+      <div class="mobile-actions"><button id="swim-btn">SWIM</button><button id="shoot-btn">SHOOT</button></div>
+    </div>
+  </div>
+
+  <div id="countdown" class="countdown"></div>
+
+  <div id="results" class="overlay-screen results-overlay">
+    <section class="result-card">
+      <div class="section-label">FINAL TURF</div><h2 id="result-title">VICTORY!</h2>
+      <div class="result-bars"><div class="result-row orange-row"><span>ORANGE</span><div><i id="result-a"></i></div><b id="result-a-text">0%</b></div><div class="result-row cyan-row"><span>CYAN</span><div><i id="result-b"></i></div><b id="result-b-text">0%</b></div></div>
+      <button id="again" class="modal-ok">REMATCH</button><button id="home" class="modal-back">TITLE</button>
+    </section>
+  </div>
+</div>
 </body>
 </html>
