@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#cfe8ef" />
     <link rel="icon" href="data:," />
     <title>BAGGAGE RUN</title>
-    <script type="module" crossorigin src="./assets/index-CgZ3dZK_.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-C0Z5VSqi.css">
+    <script type="module" crossorigin src="./assets/index-Bbeeycfn.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BWQ8FPRo.css">
   </head>
   <body>
     <main id="app">
@@ -15,8 +15,15 @@
 
       <section id="start-screen" class="overlay screen-card" aria-label="Baggage Run start">
         <div class="brand-lockup">
-          <p class="eyebrow">AIRPORT SORTING ACTION</p>
+          <p class="eyebrow">LAST BAG AIRPORT ACTION</p>
           <h1>BAGGAGE<br /><span>RUN</span></h1>
+        </div>
+
+        <div class="late-transfer-alert" aria-label="Late transfer alert">
+          <span>LATE TRANSFER</span>
+          <strong>KJ 281 · FINAL CALL</strong>
+          <b>DEPARTS IN 00:58</b>
+          <small>LAST BAG. YOUR FLIGHT IS LEAVING.</small>
         </div>
 
         <div class="bag-tag" aria-label="Baggage tag">
@@ -34,7 +41,7 @@
           </div>
         </div>
 
-        <button id="start-button" class="primary-button" type="button">CHECK IN</button>
+        <button id="start-button" class="primary-button" type="button">MAKE THE FLIGHT</button>
         <button id="how-button" class="ghost-button" type="button">HOW TO PLAY</button>
 
         <div id="how-panel" class="how-panel" hidden>
@@ -48,15 +55,15 @@
         <div class="hud-block hud-left">
           <span>FLIGHT</span>
           <strong>KJ 281</strong>
-          <small>TOKYO / HND</small>
+          <small id="flight-status">FINAL CALL · HND</small>
         </div>
         <div class="hud-time">
-          <span>TIME</span>
-          <strong id="time-value">00:00</strong>
-          <small id="queue-value">QUEUE 18 / 24</small>
+          <span>DEPARTS IN</span>
+          <strong id="time-value">00:58</strong>
+          <small id="queue-value">17 BAGS AHEAD</small>
         </div>
         <div class="hud-block hud-right">
-          <span>FLOW</span>
+          <span>ROUTE</span>
           <strong id="sort-value">0 / 3</strong>
           <small id="belt-value">CHECK-IN</small>
         </div>
@@ -122,10 +129,10 @@
 
         <dl class="result-stats">
           <div><dt>FLOW CHECKS</dt><dd id="result-sort">3 / 3</dd></div>
-          <div><dt>OVERTAKES</dt><dd id="result-overtakes">0</dd></div>
-          <div><dt>LOADING ORDER</dt><dd id="result-order">18 / 24</dd></div>
+          <div><dt>BAGS PASSED</dt><dd id="result-overtakes">0</dd></div>
+          <div><dt>FINAL BAG POSITION</dt><dd id="result-order">18 / 24</dd></div>
           <div><dt>COLLISIONS</dt><dd id="result-collisions">0</dd></div>
-          <div><dt>TIME</dt><dd id="result-time">00:00.00</dd></div>
+          <div><dt>DEPARTURE MARGIN</dt><dd id="result-time">00:00</dd></div>
         </dl>
 
         <button id="retry-button" class="primary-button" type="button">NEXT BAG</button>
