@@ -1,0 +1,30 @@
+{
+  "assets": [
+    {
+      "name": "Kenney Factory Kit 3.0",
+      "source": "https://kenney.nl/assets/factory-kit",
+      "license": "CC0 1.0",
+      "files": [
+        "kenney-factory/conveyor-long.glb",
+        "kenney-factory/conveyor-junction-t.glb",
+        "kenney-factory/Textures/colormap.png",
+        "kenney-factory/LICENSE.txt"
+      ],
+      "usage": "Secondary airport baggage-line machinery / future junction art pass. Runtime material normalization is applied in BAGGAGE RUN."
+    }
+  ],
+  "generated": [
+    {
+      "name": "BAGGAGE RUN suitcase family",
+      "source": "baggage-run/tools/generate_suitcases.py",
+      "license": "Project-authored",
+      "files": [
+        "luggage/player-red.glb",
+        "luggage/npc-blue.glb",
+        "luggage/npc-yellow.glb",
+        "luggage/npc-green.glb",
+        "luggage/npc-silver.glb"
+      ]
+    }
+  ]
+}
