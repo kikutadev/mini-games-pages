@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#82c8ef" />
     <link rel="icon" href="data:," />
     <title>UMBRELLA FLIGHT</title>
-    <script type="module" crossorigin src="./assets/index-DMb0nvHC.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-B3Vl9UBb.css">
+    <script type="module" crossorigin src="./assets/index-DiI27sBV.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DNYUh_SK.css">
   </head>
   <body>
     <div id="app">
@@ -23,7 +23,10 @@
           <p id="stage-tagline" class="tagline">風に乗って、着地点まで。</p>
         </div>
         <div class="start-actions">
-          <div id="stage-selector" class="stage-selector" aria-label="ステージ選択"></div>
+          <button id="stage-menu-button" class="stage-menu-button" type="button">
+            <span>STAGE SELECT</span>
+            <strong id="stage-menu-current">STAGE 1　そよ風草原</strong>
+          </button>
           <button id="start-button" class="primary-button" type="button">飛ばされる</button>
           <p class="start-note">押したまま上下左右へドラッグ ・ 離すと傘を閉じて急降下</p>
         </div>
@@ -40,6 +43,7 @@
           <div><span>風</span><strong id="wind-value">8.4</strong><small>m/s</small></div>
         </div>
       </header>
+      <button id="play-stage-button" class="play-stage-button ui-layer hidden" type="button">STAGES</button>
 
       <div id="first-touch-hint" class="first-touch-hint ui-layer hidden">
         <strong>押したまま上下左右へ</strong>
@@ -79,6 +83,21 @@
         <div class="result-actions">
           <button id="next-button" class="primary-button next-button" type="button">次のステージ</button>
           <button id="retry-button" class="secondary-button" type="button">もう一度</button>
+          <button id="result-stage-button" class="secondary-button stage-return-button" type="button">ステージ選択へ</button>
+        </div>
+      </section>
+
+      <section id="stage-menu" class="stage-menu ui-layer hidden" aria-modal="true" role="dialog" aria-labelledby="stage-menu-title">
+        <div class="stage-menu-panel">
+          <div class="stage-menu-header">
+            <div>
+              <p class="kicker">CHOOSE YOUR WIND</p>
+              <h2 id="stage-menu-title">STAGE SELECT</h2>
+            </div>
+            <button id="stage-menu-close" class="stage-menu-close" type="button" aria-label="ステージ選択を閉じる">×</button>
+          </div>
+          <div id="stage-selector" class="stage-selector" aria-label="ステージ一覧"></div>
+          <p class="stage-menu-note">好きなステージから遊べます</p>
         </div>
       </section>
     </div>
