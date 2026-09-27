@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#efe4d2" />
     <title>CAT DROP - Locomotion Lab</title>
-    <script type="module" crossorigin src="./assets/index-1k7dfYia.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-B4fp4fSF.css">
+    <script type="module" crossorigin src="./assets/index-PKU44sH-.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Ba7abQDj.css">
   </head>
   <body>
     <div id="app">
@@ -18,7 +18,22 @@
         </div>
         <div class="status" id="status">loading…</div>
       </div>
-      <div class="hint">WASD / 矢印キー · 左下スティック</div>
+      <div class="motion-tray" id="motionTray" aria-label="猫モーション">
+        <button class="motion-button" data-action="Jump"><span>ジャンプ</span><small>Space</small></button>
+        <button class="motion-button" data-action="Sit"><span>座る</span><small>C</small></button>
+        <button class="motion-button" data-action="DodgeL"><span>回避←</span><small>Q</small></button>
+        <button class="motion-button" data-action="DodgeR"><span>回避→</span><small>E</small></button>
+        <button class="motion-button" data-action="Roll"><span>転がる</span><small>R</small></button>
+        <button class="motion-button" data-action="Stretch"><span>伸び</span><small>T</small></button>
+        <button class="motion-button" data-action="SwipeL"><span>パンチ←</span><small>F</small></button>
+        <button class="motion-button" data-action="SwipeR"><span>パンチ→</span><small>G</small></button>
+        <button class="motion-button" data-action="Crouch"><span>伏せる</span><small>X</small></button>
+        <button class="motion-button" data-action="Pounce"><span>飛びつく</span><small>P</small></button>
+        <button class="motion-button" data-action="Groom"><span>毛づくろい</span><small>M</small></button>
+        <button class="motion-button" data-action="Startled"><span>びっくり</span><small>Z</small></button>
+        <button class="motion-button" data-action="LookAround"><span>見回す</span><small>L</small></button>
+      </div>
+      <div class="hint">WASD / 矢印キー · 左下スティック · 上のボタンでモーション</div>
       <div class="joystick" id="joystick" aria-label="移動スティック">
         <div class="joystick-ring"></div>
         <div class="joystick-knob" id="joystickKnob"></div>
