@@ -6,25 +6,32 @@
     <meta name="theme-color" content="#82c8ef" />
     <link rel="icon" href="data:," />
     <title>UMBRELLA FLIGHT</title>
-    <script type="module" crossorigin src="./assets/index-DHO809cL.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DiK5D7re.css">
+    <script type="module" crossorigin src="./assets/index-CmeSdNHH.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-B3Vl9UBb.css">
   </head>
   <body>
     <div id="app">
       <div id="scene" aria-hidden="true"></div>
+      <div id="rain-overlay" class="rain-overlay" aria-hidden="true"></div>
+      <div id="lightning-flash" class="lightning-flash" aria-hidden="true"></div>
 
       <section id="start-screen" class="start-screen ui-layer">
         <div class="title-lockup">
-          <p class="kicker">WIND WARNING</p>
+          <p id="stage-kicker" class="kicker">STAGE 1 / 5</p>
           <h1>UMBRELLA<br /><span>FLIGHT</span></h1>
-          <p class="tagline">街を抜けて、あの屋上へ。</p>
+          <p id="stage-name" class="stage-name">そよ風草原</p>
+          <p id="stage-tagline" class="tagline">風に乗って、着地点まで。</p>
         </div>
-        <button id="start-button" class="primary-button" type="button">飛ばされる</button>
-        <p class="start-note">押したまま上下左右へドラッグ ・ 離すと傘を閉じて急降下</p>
+        <div class="start-actions">
+          <div id="stage-selector" class="stage-selector" aria-label="ステージ選択"></div>
+          <button id="start-button" class="primary-button" type="button">飛ばされる</button>
+          <p class="start-note">押したまま上下左右へドラッグ ・ 離すと傘を閉じて急降下</p>
+        </div>
       </section>
 
       <header id="play-hud" class="play-hud ui-layer hidden" aria-live="polite">
         <div class="hud-primary">
+          <small id="hud-stage">STAGE 1</small>
           <span>GOAL</span>
           <strong id="distance-value">260m</strong>
         </div>
@@ -69,7 +76,10 @@
           <div><dt>MAX ALT.</dt><dd id="result-altitude">34m</dd></div>
           <div><dt>GUSTS</dt><dd id="result-gusts">3</dd></div>
         </dl>
-        <button id="retry-button" class="primary-button" type="button">もう一度</button>
+        <div class="result-actions">
+          <button id="next-button" class="primary-button next-button" type="button">次のステージ</button>
+          <button id="retry-button" class="secondary-button" type="button">もう一度</button>
+        </div>
       </section>
     </div>
   </body>
