@@ -4,20 +4,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#efe4d2" />
-    <title>CAT DROP - Locomotion Lab</title>
-    <script type="module" crossorigin src="./assets/index-PKU44sH-.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Ba7abQDj.css">
+    <title>CAT DROP</title>
+    <script type="module" crossorigin src="./assets/index-Bwod3Pg7.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C8eEOn_H.css">
   </head>
   <body>
     <div id="app">
       <canvas id="game"></canvas>
+
       <div class="topbar">
         <div>
-          <div class="eyebrow">CAT DROP / MOVEMENT QA</div>
-          <div class="title">猫の操作検証</div>
+          <div class="eyebrow" id="eyebrow">CAT DROP</div>
+          <div class="title" id="pageTitle">机の上を空にしろ</div>
         </div>
         <div class="status" id="status">loading…</div>
       </div>
+
+      <div class="game-hud" id="gameHud">
+        <div class="hud-cell">
+          <small>被害額</small>
+          <strong id="damageValue">¥0</strong>
+        </div>
+        <div class="hud-cell hud-center">
+          <small>残り</small>
+          <strong><span id="remainingValue">0</span><i>個</i></strong>
+        </div>
+        <div class="hud-cell hud-time">
+          <small>TIME</small>
+          <strong id="timeValue">45.0</strong>
+        </div>
+        <div class="combo-badge" id="comboBadge" aria-live="polite"></div>
+      </div>
+
       <div class="motion-tray" id="motionTray" aria-label="猫モーション">
         <button class="motion-button" data-action="Jump"><span>ジャンプ</span><small>Space</small></button>
         <button class="motion-button" data-action="Sit"><span>座る</span><small>C</small></button>
@@ -33,15 +51,48 @@
         <button class="motion-button" data-action="Startled"><span>びっくり</span><small>Z</small></button>
         <button class="motion-button" data-action="LookAround"><span>見回す</span><small>L</small></button>
       </div>
-      <div class="hint">WASD / 矢印キー · 左下スティック · 上のボタンでモーション</div>
+
+      <div class="game-actions" id="gameActions">
+        <button class="game-action paw left" data-action="SwipeL" aria-label="左猫パンチ"><b>左</b><span>パンチ</span></button>
+        <button class="game-action paw right" data-action="SwipeR" aria-label="右猫パンチ"><b>右</b><span>パンチ</span></button>
+        <button class="game-action pounce" data-action="Pounce" aria-label="飛びつく">飛びつく</button>
+      </div>
+
+      <div class="hint" id="hint">左スティックで移動 · 右下で猫パンチ</div>
       <div class="joystick" id="joystick" aria-label="移動スティック">
         <div class="joystick-ring"></div>
         <div class="joystick-knob" id="joystickKnob"></div>
       </div>
-      <div class="speed-panel">
+      <div class="speed-panel" id="speedPanel">
         <div class="speed-label">MOVE</div>
         <div class="speed-value" id="speedValue">0.00</div>
         <div class="anim-value" id="animValue">IDLE</div>
+      </div>
+
+      <div class="impact-word" id="impactWord" aria-hidden="true"></div>
+
+      <div class="overlay is-visible" id="startOverlay">
+        <div class="overlay-card start-card">
+          <div class="cat-mark">CAT DROP</div>
+          <h1>机の上を<br />空にしろ。</h1>
+          <p>猫になって、目につくものを全部落とす。<br />連鎖で落とすほど気持ちいい。</p>
+          <button class="primary-button" id="startButton">荒らし始める</button>
+          <small>45秒 / 左スティック + 猫パンチ / 飛びつき</small>
+        </div>
+      </div>
+
+      <div class="overlay" id="resultOverlay">
+        <div class="overlay-card result-card">
+          <div class="result-kicker" id="resultKicker">RESULT</div>
+          <h2 id="resultTitle">問題児</h2>
+          <div class="result-damage" id="resultDamage">¥0</div>
+          <div class="result-grid">
+            <div><small>落下</small><strong id="resultDropped">0 / 0</strong></div>
+            <div><small>最大連鎖</small><strong id="resultCombo">1</strong></div>
+            <div><small>残り時間</small><strong id="resultTime">0.0秒</strong></div>
+          </div>
+          <button class="primary-button" id="restartButton">もう一度荒らす</button>
+        </div>
       </div>
     </div>
   </body>
