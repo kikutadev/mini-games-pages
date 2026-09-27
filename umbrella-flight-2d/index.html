@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#82c8ef" />
     <link rel="icon" href="data:," />
     <title>UMBRELLA FLIGHT</title>
-    <script type="module" crossorigin src="./assets/index-CJHFe4mI.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BEVzNemA.css">
+    <script type="module" crossorigin src="./assets/index-CO1_khjl.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DwKhPgTj.css">
   </head>
   <body>
     <div id="app">
@@ -17,16 +17,16 @@
         <div class="title-lockup">
           <p class="kicker">WIND WARNING</p>
           <h1>UMBRELLA<br /><span>FLIGHT</span></h1>
-          <p class="tagline">街を抜けて、あの屋上へ。</p>
+          <p class="tagline">傘ひとつで、屋上まで。</p>
         </div>
         <button id="start-button" class="primary-button" type="button">飛ばされる</button>
-        <p class="start-note">押したまま上下左右へドラッグ ・ 離すと傘を閉じて急降下</p>
+        <p class="start-note">押して傘を開く ・ 上下ドラッグで傾ける ・ 離して急降下</p>
       </section>
 
       <header id="play-hud" class="play-hud ui-layer hidden" aria-live="polite">
         <div class="hud-primary">
           <span>GOAL</span>
-          <strong id="distance-value">260m</strong>
+          <strong id="distance-value">220m</strong>
         </div>
         <div class="hud-secondary">
           <div><span>高度</span><strong id="altitude-value">20m</strong></div>
@@ -35,14 +35,8 @@
       </header>
 
       <div id="first-touch-hint" class="first-touch-hint ui-layer hidden">
-        <strong>押したまま上下左右へ</strong>
-        <span>傘を傾けて、ビルの間を抜ける</span>
-      </div>
-
-      <div id="flight-control" class="flight-control ui-layer hidden" aria-hidden="true">
-        <span class="control-axis axis-x"></span>
-        <span class="control-axis axis-y"></span>
-        <span id="control-knob" class="control-knob"></span>
+        <strong>押して傘を開く</strong>
+        <span>上下ドラッグで角度を変える</span>
       </div>
 
       <div id="gust-banner" class="gust-banner ui-layer" aria-hidden="true">
@@ -50,7 +44,7 @@
       </div>
 
       <div id="goal-callout" class="goal-callout ui-layer hidden">
-        <span>ROOFTOP</span>
+        <span>LAND HERE</span>
         <strong>▼</strong>
       </div>
 
