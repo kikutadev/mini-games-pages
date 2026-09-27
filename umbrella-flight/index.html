@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#82c8ef" />
+    <link rel="icon" href="data:," />
+    <title>UMBRELLA FLIGHT</title>
+    <script type="module" crossorigin src="./assets/index-CO1_khjl.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DwKhPgTj.css">
+  </head>
+  <body>
+    <div id="app">
+      <div id="scene" aria-hidden="true"></div>
+
+      <section id="start-screen" class="start-screen ui-layer">
+        <div class="title-lockup">
+          <p class="kicker">WIND WARNING</p>
+          <h1>UMBRELLA<br /><span>FLIGHT</span></h1>
+          <p class="tagline">傘ひとつで、屋上まで。</p>
+        </div>
+        <button id="start-button" class="primary-button" type="button">飛ばされる</button>
+        <p class="start-note">押して傘を開く ・ 上下ドラッグで傾ける ・ 離して急降下</p>
+      </section>
+
+      <header id="play-hud" class="play-hud ui-layer hidden" aria-live="polite">
+        <div class="hud-primary">
+          <span>GOAL</span>
+          <strong id="distance-value">220m</strong>
+        </div>
+        <div class="hud-secondary">
+          <div><span>高度</span><strong id="altitude-value">20m</strong></div>
+          <div><span>風</span><strong id="wind-value">8.4</strong><small>m/s</small></div>
+        </div>
+      </header>
+
+      <div id="first-touch-hint" class="first-touch-hint ui-layer hidden">
+        <strong>押して傘を開く</strong>
+        <span>上下ドラッグで角度を変える</span>
+      </div>
+
+      <div id="gust-banner" class="gust-banner ui-layer" aria-hidden="true">
+        <span>GUST!</span>
+      </div>
+
+      <div id="goal-callout" class="goal-callout ui-layer hidden">
+        <span>LAND HERE</span>
+        <strong>▼</strong>
+      </div>
+
+      <section id="result-screen" class="result-screen ui-layer hidden" aria-live="assertive">
+        <p id="result-kicker" class="result-kicker">ROOFTOP ARRIVAL</p>
+        <h2 id="result-title">LANDED!</h2>
+        <div class="result-grade" id="result-grade">SAFE LANDING</div>
+        <dl class="result-stats">
+          <div><dt>FLIGHT</dt><dd id="result-time">28.4s</dd></div>
+          <div><dt>MAX ALT.</dt><dd id="result-altitude">34m</dd></div>
+          <div><dt>GUSTS</dt><dd id="result-gusts">3</dd></div>
+        </dl>
+        <button id="retry-button" class="primary-button" type="button">もう一度</button>
+      </section>
+    </div>
+  </body>
+</html>
