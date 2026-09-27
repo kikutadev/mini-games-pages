@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#cfe8ef" />
     <link rel="icon" href="data:," />
     <title>BAGGAGE RUN</title>
-    <script type="module" crossorigin src="./assets/index-B9vQv1LM.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-5DwQNVd3.css">
+    <script type="module" crossorigin src="./assets/index-BnqB0L2e.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DZ5eKKwu.css">
   </head>
   <body>
     <main id="app">
@@ -39,8 +39,8 @@
 
         <div id="how-panel" class="how-panel" hidden>
           <div><b>DRAG</b><span>左右移動</span></div>
-          <div><b>FLICK ↑</b><span>ジャンプ</span></div>
-          <div><b>FLICK ← →</b><span>体当たり</span></div>
+          <div><b>FLICK ↑</b><span>荷物を飛び越して順位UP</span></div>
+          <div><b>FLICK ← →</b><span>荷物を倒して順位UP</span></div>
         </div>
       </section>
 
@@ -53,6 +53,7 @@
         <div class="hud-time">
           <span>TIME</span>
           <strong id="time-value">00:00</strong>
+          <small id="queue-value">QUEUE 18 / 24</small>
         </div>
         <div class="hud-block hud-right">
           <span>FLOW</span>
@@ -90,6 +91,8 @@
 
         <dl class="result-stats">
           <div><dt>FLOW CHECKS</dt><dd id="result-sort">3 / 3</dd></div>
+          <div><dt>OVERTAKES</dt><dd id="result-overtakes">0</dd></div>
+          <div><dt>LOADING ORDER</dt><dd id="result-order">18 / 24</dd></div>
           <div><dt>COLLISIONS</dt><dd id="result-collisions">0</dd></div>
           <div><dt>TIME</dt><dd id="result-time">00:00.00</dd></div>
         </dl>
