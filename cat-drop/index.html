@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#efe4d2" />
+    <title>CAT DROP - Locomotion Lab</title>
+    <script type="module" crossorigin src="./assets/index-O2uZKNdo.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-B4fp4fSF.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+      <div class="topbar">
+        <div>
+          <div class="eyebrow">CAT DROP / MOVEMENT QA</div>
+          <div class="title">猫の操作検証</div>
+        </div>
+        <div class="status" id="status">loading…</div>
+      </div>
+      <div class="hint">WASD / 矢印キー · 左下スティック</div>
+      <div class="joystick" id="joystick" aria-label="移動スティック">
+        <div class="joystick-ring"></div>
+        <div class="joystick-knob" id="joystickKnob"></div>
+      </div>
+      <div class="speed-panel">
+        <div class="speed-label">MOVE</div>
+        <div class="speed-value" id="speedValue">0.00</div>
+        <div class="anim-value" id="animValue">IDLE</div>
+      </div>
+    </div>
+  </body>
+</html>
