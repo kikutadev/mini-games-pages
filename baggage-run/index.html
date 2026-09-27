@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#cfe8ef" />
     <link rel="icon" href="data:," />
     <title>BAGGAGE RUN</title>
-    <script type="module" crossorigin src="./assets/index-BnqB0L2e.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DZ5eKKwu.css">
+    <script type="module" crossorigin src="./assets/index-CgZ3dZK_.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C0Z5VSqi.css">
   </head>
   <body>
     <main id="app">
@@ -66,6 +66,37 @@
         <span id="announcement-kicker">SORTING</span>
         <strong id="announcement-text">KJ 281 →</strong>
       </div>
+
+      <aside id="route-map" class="route-map" hidden aria-label="Baggage route map">
+        <div class="route-map__header">
+          <span>ROUTE MAP</span>
+          <strong id="route-map-stage">SCREENING</strong>
+        </div>
+        <svg class="route-map__svg" viewBox="0 0 184 150" role="img" aria-label="Simplified baggage handling route">
+          <path class="map-line map-line--base" d="M22 132 L22 108 L52 108 L52 86 L88 86 L88 64 L112 64 L112 16" />
+          <path class="map-line map-line--target" d="M112 44 L72 44" />
+          <path class="map-line map-line--exit" d="M112 58 L72 58 M112 51 L154 51 M112 37 L154 37 M112 30 L72 30 M112 23 L154 23" />
+
+          <g class="map-node"><circle cx="22" cy="132" r="3"/><text x="30" y="135">CHECK-IN</text></g>
+          <g class="map-node"><circle cx="22" cy="108" r="3"/><text x="30" y="111">LIFT</text></g>
+          <g class="map-node"><circle cx="52" cy="86" r="3"/><text x="59" y="89">T-A</text></g>
+          <g class="map-node"><circle cx="88" cy="64" r="3"/><text x="95" y="67">T-B</text></g>
+          <text class="map-label" x="118" y="13">SORT</text>
+
+          <g class="map-exit"><circle cx="72" cy="58" r="2.5"/><text x="46" y="61">SIN</text></g>
+          <g class="map-exit"><circle cx="154" cy="51" r="2.5"/><text x="159" y="54">ICN</text></g>
+          <g class="map-exit map-exit--target"><circle cx="72" cy="44" r="4"/><text x="46" y="47">HND</text></g>
+          <g class="map-exit"><circle cx="154" cy="37" r="2.5"/><text x="159" y="40">SYD</text></g>
+          <g class="map-exit"><circle cx="72" cy="30" r="2.5"/><text x="46" y="33">CDG</text></g>
+          <g class="map-exit"><circle cx="154" cy="23" r="2.5"/><text x="159" y="26">JFK</text></g>
+
+          <g id="route-map-player" class="map-player" transform="translate(22 132)">
+            <circle r="6" />
+            <path d="M-3 -3 H3 V3 H-3 Z" />
+          </g>
+        </svg>
+        <div class="route-map__legend"><b>●</b> YOU <span>★ KJ281 / HND</span></div>
+      </aside>
 
       <div id="control-hint" class="control-hint" hidden>
         <span>← DRAG →</span>
