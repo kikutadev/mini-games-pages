@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#efe4d2" />
     <link rel="icon" href="data:," />
     <title>CAT DROP</title>
-    <script type="module" crossorigin src="./assets/index-Cz3Y-sng.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Pjsyri7E.css">
+    <script type="module" crossorigin src="./assets/index-BKNe2FP_.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C10dd8BZ.css">
   </head>
   <body>
     <div id="app">
@@ -76,10 +76,16 @@
       <div class="overlay is-visible" id="startOverlay">
         <div class="overlay-card start-card">
           <div class="cat-mark">CAT DROP</div>
-          <h1>机の上を<br />空にしろ。</h1>
-          <p>猫になって、目につくものを全部落とす。<br />連鎖で落とすほど気持ちいい。</p>
+          <h1 id="startTitle">机の上を<br />空にしろ。</h1>
+          <p id="startDescription">猫になって、目につくものを全部落とす。<br />連鎖で落とすほど気持ちいい。</p>
+          <div class="stage-picker" id="stagePicker" aria-label="ステージ選択">
+            <button class="stage-card is-selected" data-stage="0"><small>ROOM 01</small><strong>WORK DESK</strong><span>標準</span></button>
+            <button class="stage-card" data-stage="1"><small>ROOM 02</small><strong>BREAKFAST</strong><span>連鎖</span></button>
+            <button class="stage-card" data-stage="2"><small>ROOM 03</small><strong>GAMER DESK</strong><span>高額</span></button>
+            <button class="stage-card" data-stage="3"><small>ROOM 04</small><strong>DRESSER</strong><span>密集</span></button>
+          </div>
           <button class="primary-button" id="startButton">荒らし始める</button>
-          <small>45秒 / 左スティック + 猫パンチ / 飛びつき</small>
+          <small id="startMeta">45秒 / 左スティック + 猫パンチ / 飛びつき</small>
         </div>
       </div>
 
@@ -94,6 +100,7 @@
             <div><small>残り時間</small><strong id="resultTime">0.0秒</strong></div>
           </div>
           <button class="primary-button" id="restartButton">もう一度荒らす</button>
+          <button class="secondary-button" id="stageSelectButton">ステージを選ぶ</button>
         </div>
       </div>
     </div>
