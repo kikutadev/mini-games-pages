@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#efe4d2" />
     <link rel="icon" href="data:," />
     <title>CAT DROP</title>
-    <script type="module" crossorigin src="./assets/index-B8UFc5ry.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BXZtdK3m.css">
+    <script type="module" crossorigin src="./assets/index-DmbKYtT5.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DPm--lPo.css">
   </head>
   <body>
     <div id="app">
@@ -27,8 +27,8 @@
           <strong id="damageValue">¥0</strong>
         </div>
         <div class="hud-cell hud-center">
-          <small>残り</small>
-          <strong><span id="remainingValue">0</span><i>個</i></strong>
+          <small id="progressLabel">残り</small>
+          <strong><span id="remainingValue">0</span><i id="remainingUnit">個</i></strong>
         </div>
         <div class="hud-cell hud-time">
           <small>TIME</small>
@@ -54,12 +54,15 @@
         <button class="motion-button" data-action="TurnL"><span>振り向く←</span><small>V</small></button>
         <button class="motion-button" data-action="TurnR"><span>振り向く→</span><small>B</small></button>
         <button class="motion-button" data-action="ScratchWall"><span>壁ひっかき</span><small>H</small></button>
+        <button class="motion-button" data-action="TissuePull"><span>ティッシュ</span><small>U</small></button>
+        <button class="motion-button" data-action="DigPlant"><span>鉢を掘る</span><small>I</small></button>
+        <button class="motion-button" data-action="CurtainPull"><span>カーテン</span><small>O</small></button>
       </div>
 
       <div class="game-actions" id="gameActions">
         <button class="game-action paw attack" data-action="Attack" aria-label="猫パンチ"><span>猫パンチ</span></button>
         <button class="game-action pounce" data-action="Pounce" aria-label="飛びつく">飛びつく</button>
-        <button class="game-action secondary scratch" data-action="ScratchWall" aria-label="壁を爪でひっかく">爪とぎ</button>
+        <button class="game-action secondary context" data-action="Context" aria-label="近くの物にいたずらする"><span>いたずら</span></button>
       </div>
 
       <div class="hint" id="hint">左スティックで移動 · 右下で猫パンチ</div>
@@ -81,13 +84,13 @@
           <h1 id="startTitle">机の上を<br />空にしろ。</h1>
           <p id="startDescription">猫になって、目につくものを全部落とす。<br />連鎖で落とすほど気持ちいい。</p>
           <div class="stage-picker" id="stagePicker" aria-label="ステージ選択">
-            <button class="stage-card is-selected" data-stage="0"><small>ROOM 01</small><strong>WORK DESK</strong><span>標準</span></button>
+            <button class="stage-card is-selected" data-stage="0"><small>ROOM 01</small><strong>HOME OFFICE</strong><span>専用ギミック</span></button>
             <button class="stage-card" data-stage="1"><small>ROOM 02</small><strong>BREAKFAST</strong><span>連鎖</span></button>
             <button class="stage-card" data-stage="2"><small>ROOM 03</small><strong>GAMER DESK</strong><span>高額</span></button>
             <button class="stage-card" data-stage="3"><small>ROOM 04</small><strong>DRESSER</strong><span>密集</span></button>
           </div>
           <button class="primary-button" id="startButton">荒らし始める</button>
-          <small id="startMeta">45秒 / 猫パンチ / 飛びつき / 壁で爪とぎ</small>
+          <small id="startMeta">45秒 / 猫パンチ / 飛びつき / 近くでいたずら</small>
         </div>
       </div>
 
