@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#e7e0c8" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <meta name="description" content="丸太を投入し、製材ラインを高速化・自動化する短尺3Dゲーム。" />
+    <title>TIMBER RUSH</title>
+    <script type="module" crossorigin src="../assets/timberRush-BsdtO0RD.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-P2Xu9kJm.js">
+    <link rel="modulepreload" crossorigin href="../assets/runtime-DlwBDPwP.js">
+    <link rel="modulepreload" crossorigin href="../assets/movement-input-7FZgQj6R.js">
+    <link rel="stylesheet" crossorigin href="../assets/runtime-BQTM19Jm.css">
+    <link rel="stylesheet" crossorigin href="../assets/movement-input-FTTvBEOz.css">
+    <link rel="stylesheet" crossorigin href="../assets/timberRush-DnMp7DkQ.css">
+  </head>
+  <body>
+    <main id="timber-rush-game">
+      <div id="timber-canvas" aria-label="TIMBER RUSH game canvas"></div>
+      <header class="timber-hud">
+        <a class="timber-back" href="../" aria-label="ゲーム一覧へ戻る">←</a>
+        <div class="timber-stat"><span>丸太</span><strong><b id="timber-carry">0</b> / 6</strong></div>
+        <div id="timber-planks-stat" class="timber-stat" data-progressive-stat hidden><span>板材</span><strong id="timber-planks">0</strong></div>
+        <div id="timber-line-stat" class="timber-stat" data-progressive-stat hidden><span>ライン</span><strong id="timber-line">1.0×</strong></div>
+      </header>
+      <div class="timber-objective">
+        <span id="timber-objective-kicker">01 · 丸太集め</span>
+        <strong id="timber-objective-text">立っている木へ移動 · 近づくと自動で伐採</strong>
+      </div>
+      <div id="timber-event" class="timber-event" aria-live="polite"></div>
+      <div id="timber-joystick" class="timber-joystick" aria-hidden="true"><span id="timber-joystick-knob"></span></div>
+      <footer class="timber-hint"><span>ドラッグで移動</span><span>WASD / 矢印キー</span></footer>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,391 @@
+{
+  "generatedFrom": "assets/selected-assets.json",
+  "assetCount": 27,
+  "totalBytes": 1293808,
+  "assets": [
+    {
+      "id": "player-hooded",
+      "runtimePath": "assets/shared/characters/player-hooded.glb",
+      "origin": "https://kaylousberg.itch.io/kaykit-adventurers",
+      "license": "CC0-1.0",
+      "purpose": "Shared KayKit player/worker base; derived GLB keeps only Idle, Running_A, and 1H_Melee_Attack_Chop animations used by the five current games",
+      "sha256": "7acad8594252d17bf505297797bbf252003594381fabbc906efaa3490215c233",
+      "bytes": 427124,
+      "dependencies": []
+    },
+    {
+      "id": "anim-fishing-reeling",
+      "runtimePath": "assets/shared/animations/fishing-reeling.glb",
+      "origin": "https://kaylousberg.itch.io/kaykit-character-animations",
+      "license": "CC0-1.0",
+      "purpose": "FROST HAULER lazy fishing animation; derived from KayKit Rig_Medium_Tools with only Fishing_Reeling retained and no mannequin meshes",
+      "sha256": "9170f134f4793db623e4ca5ed785ac13b3aefe62f0325cb07f13df326143abe2",
+      "bytes": 34904,
+      "dependencies": []
+    },
+    {
+      "id": "tool-axe",
+      "runtimePath": "assets/shared/props/tool-axe.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "Chopping tool",
+      "sha256": "de5c6cc51cdb5bcfad8bd7128b7ff0e37a34e6f4f8deddec82bb8634c25cc20d",
+      "bytes": 8612,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "campfire-pit",
+      "runtimePath": "assets/frost-hauler/stations/campfire-pit.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "Temporary furnace/deposit visual",
+      "sha256": "a78ce38de408456649146077e1917d70bb39f7c87c3c7370276d809d2409b0ab",
+      "bytes": 26468,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "campfire-stand",
+      "runtimePath": "assets/frost-hauler/stations/campfire-stand.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "Camp progression visual",
+      "sha256": "12fe58a0aa3f73bc4cc0a817f4e8bfa331bb304703384852ca38b38ab38ee5ea",
+      "bytes": 8320,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "snow-tree-a",
+      "runtimePath": "assets/shared/environment/tree-snow-a.glb",
+      "origin": "https://kenney.nl/assets/holiday-kit",
+      "license": "CC0-1.0",
+      "purpose": "Harvestable/background tree",
+      "sha256": "582c4c33e9833372afd0e63f55822006b005b4555dd2ae061fa1cef1813574de",
+      "bytes": 34484,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "015fcc1664be7576f468a98bc4f5f329ef8b3c9caef0d85b2a4dc0ca69516863",
+          "bytes": 12777
+        }
+      ]
+    },
+    {
+      "id": "snow-tree-b",
+      "runtimePath": "assets/shared/environment/tree-snow-b.glb",
+      "origin": "https://kenney.nl/assets/holiday-kit",
+      "license": "CC0-1.0",
+      "purpose": "Tree variation",
+      "sha256": "c667e9c039d31f31eeb6fb207f864bf2b05a19f1de1a5d4ddd19188ee77aab79",
+      "bytes": 38296,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "015fcc1664be7576f468a98bc4f5f329ef8b3c9caef0d85b2a4dc0ca69516863",
+          "bytes": 12777
+        }
+      ]
+    },
+    {
+      "id": "snow-tree-c",
+      "runtimePath": "assets/shared/environment/tree-snow-c.glb",
+      "origin": "https://kenney.nl/assets/holiday-kit",
+      "license": "CC0-1.0",
+      "purpose": "Tree variation",
+      "sha256": "768a3f05d663714435fa0368cb8a61e455c1fb686a67762750972056abd514f6",
+      "bytes": 24400,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "015fcc1664be7576f468a98bc4f5f329ef8b3c9caef0d85b2a4dc0ca69516863",
+          "bytes": 12777
+        }
+      ]
+    },
+    {
+      "id": "snow-ground",
+      "runtimePath": "assets/shared/environment/snow-flat-large.glb",
+      "origin": "https://kenney.nl/assets/holiday-kit",
+      "license": "CC0-1.0",
+      "purpose": "Snow ground breakup",
+      "sha256": "1122009ac0fef96edc00cb6520c6593517f64c6ec1bb2329ba69c1df056a1c3b",
+      "bytes": 10264,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "015fcc1664be7576f468a98bc4f5f329ef8b3c9caef0d85b2a4dc0ca69516863",
+          "bytes": 12777
+        }
+      ]
+    },
+    {
+      "id": "snow-pile",
+      "runtimePath": "assets/shared/environment/snow-pile.glb",
+      "origin": "https://kenney.nl/assets/holiday-kit",
+      "license": "CC0-1.0",
+      "purpose": "Snow decoration",
+      "sha256": "37ba917164564051371d63588489bb662444eba0327517546dd125ccd45b1007",
+      "bytes": 13796,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "015fcc1664be7576f468a98bc4f5f329ef8b3c9caef0d85b2a4dc0ca69516863",
+          "bytes": 12777
+        }
+      ]
+    },
+    {
+      "id": "stump",
+      "runtimePath": "assets/shared/resources/stump.glb",
+      "origin": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "purpose": "Tree depletion state",
+      "sha256": "3017359bd0bdf84fa137f8aca33b31b1a54c3a3f11d36e1d0995868dedd53768",
+      "bytes": 8188,
+      "dependencies": []
+    },
+    {
+      "id": "wood-log-a",
+      "runtimePath": "assets/shared/resources/wood-log.glb",
+      "origin": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "purpose": "Carry stack unit",
+      "sha256": "8c8fe8f6adfc03a3c0cd6cb24961ff74be96c2da284d70322f05797d049972d6",
+      "bytes": 14288,
+      "dependencies": []
+    },
+    {
+      "id": "wood-log-b",
+      "runtimePath": "assets/shared/resources/wood-log-large.glb",
+      "origin": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "purpose": "Carry stack variation",
+      "sha256": "e7a92369062d491e5a31a163d390e07db04ee573605bbfa84c00660d18896b4c",
+      "bytes": 7924,
+      "dependencies": []
+    },
+    {
+      "id": "factory-conveyor",
+      "runtimePath": "assets/timber-rush/stations/conveyor.glb",
+      "origin": "https://kenney.nl/assets/factory-kit",
+      "license": "CC0-1.0",
+      "purpose": "TIMBER RUSH future production line",
+      "sha256": "879c75a74fdf972326f3f177738d893bce79bafc2f0f557cc5e84adcfda6d6d5",
+      "bytes": 18676,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "35d7bd6900dde0208429eeaec87fa17fbf024ed59f3f4eab54bc92802eba9dd7",
+          "bytes": 11813
+        }
+      ]
+    },
+    {
+      "id": "factory-machine",
+      "runtimePath": "assets/timber-rush/stations/machine.glb",
+      "origin": "https://kenney.nl/assets/factory-kit",
+      "license": "CC0-1.0",
+      "purpose": "TIMBER RUSH future station",
+      "sha256": "a39e3042bcb7789274428357383317d70e1c31906e5301c99e7d9e90ac584863",
+      "bytes": 25620,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "35d7bd6900dde0208429eeaec87fa17fbf024ed59f3f4eab54bc92802eba9dd7",
+          "bytes": 11813
+        }
+      ]
+    },
+    {
+      "id": "cast-iron-stove",
+      "runtimePath": "assets/frost-hauler/stations/cast-iron-stove.glb",
+      "origin": "https://opengameart.org/content/cast-iron-stove",
+      "license": "CC0-1.0",
+      "purpose": "FROST HAULER upgraded heater / furnace hero station",
+      "sha256": "3784db458b3d5ceefda2ea7a6ed89a3a5319fc27073fa3b69644d67b6829f3fd",
+      "bytes": 332080,
+      "dependencies": []
+    },
+    {
+      "id": "snow-blower",
+      "runtimePath": "assets/snow-rescue/stations/snow-blower.glb",
+      "origin": "https://3dassets.dev/assets/ski-resort-and-snow-park-snow-blower-b33598b7",
+      "license": "CC0-1.0",
+      "purpose": "SNOW RESCUE prototype hero tool; source discloses AI-assisted asset creation",
+      "sha256": "033bb7c0a1e91e60af19960fefa4fa8df00d824f96dd512bc95b04cb13b0c0e6",
+      "bytes": 15192,
+      "dependencies": []
+    },
+    {
+      "id": "fish",
+      "runtimePath": "assets/frost-hauler/resources/fish.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "FROST HAULER second-resource carry unit",
+      "sha256": "274842585f064b42baa84cb4ec086c8613971726a16acd5c955d2bf90dabe6c2",
+      "bytes": 31688,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "fishing-stand",
+      "runtimePath": "assets/frost-hauler/stations/fishing-stand.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "FROST HAULER unlocked fishing-area visual",
+      "sha256": "7bb233454f69921f0eecfd8b5122eb19f0aae0d3740daa58075deab8cde461de",
+      "bytes": 10188,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "fish-line-fish",
+      "runtimePath": "assets/fish-line/resources/fish.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "FISH LINE carry/process fish",
+      "sha256": "274842585f064b42baa84cb4ec086c8613971726a16acd5c955d2bf90dabe6c2",
+      "bytes": 31688,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "fish-line-fish-large",
+      "runtimePath": "assets/fish-line/resources/fish-large.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "FISH LINE hero fish / sale visual",
+      "sha256": "c8fc10fdf493cc21751bd5846ea5639268ecc064a82f3a050ee915fdbe2c45e3",
+      "bytes": 31728,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "fish-line-stand",
+      "runtimePath": "assets/fish-line/stations/fishing-stand.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "FISH LINE fishing station",
+      "sha256": "7bb233454f69921f0eecfd8b5122eb19f0aae0d3740daa58075deab8cde461de",
+      "bytes": 10188,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "fish-line-grill",
+      "runtimePath": "assets/fish-line/stations/grill.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "FISH LINE processing station",
+      "sha256": "12fe58a0aa3f73bc4cc0a817f4e8bfa331bb304703384852ca38b38ab38ee5ea",
+      "bytes": 8320,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "snow-siege-snowman",
+      "runtimePath": "assets/snow-siege/enemies/snowman.glb",
+      "origin": "https://kenney.nl/assets/holiday-kit",
+      "license": "CC0-1.0",
+      "purpose": "SNOW SIEGE wave enemy",
+      "sha256": "9124463abc03ec477f35b478692ba06cf15c17420a86321a6e4deb72deac4ef4",
+      "bytes": 46492,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "015fcc1664be7576f468a98bc4f5f329ef8b3c9caef0d85b2a4dc0ca69516863",
+          "bytes": 12777
+        }
+      ]
+    },
+    {
+      "id": "snow-siege-fence",
+      "runtimePath": "assets/snow-siege/defense/fence.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "SNOW SIEGE first defense tier",
+      "sha256": "5d8050e39c8b83b5835ea38b9b17429b4a03e289b566a1db771b7e1d9c6e4050",
+      "bytes": 6428,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "snow-siege-fence-fortified",
+      "runtimePath": "assets/snow-siege/defense/fence-fortified.glb",
+      "origin": "https://kenney.nl/assets/survival-kit",
+      "license": "CC0-1.0",
+      "purpose": "SNOW SIEGE upgraded defense tier",
+      "sha256": "c50f420e9ebf0f1383a9f95766d47f377b19852651760b8223219cc2be850ece",
+      "bytes": 13592,
+      "dependencies": [
+        {
+          "uri": "Textures/colormap.png",
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1",
+          "bytes": 7440
+        }
+      ]
+    },
+    {
+      "id": "snow-siege-crossbow",
+      "runtimePath": "assets/snow-siege/defense/crossbow.glb",
+      "origin": "https://kaylousberg.itch.io/kaykit-adventurers",
+      "license": "CC0-1.0",
+      "purpose": "SNOW SIEGE turret; GLB converted from KayKit crossbow_2handed.gltf without geometry redesign",
+      "sha256": "2c4e6945fa9a57b6ecc8302b83037d8050db1ebe78efd531478bb03b59446205",
+      "bytes": 54860,
+      "dependencies": []
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#d8edf5" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <meta name="description" content="雪玉を転がして巨大化し、雪原を駆け下りる縦画面3Dアクションゲーム。" />
+    <title>SNOWBALL RUSH</title>
+    <script type="module" crossorigin src="../assets/snowballRush-CcPDzYCH.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-P2Xu9kJm.js">
+    <link rel="modulepreload" crossorigin href="../assets/runtime-DlwBDPwP.js">
+    <link rel="stylesheet" crossorigin href="../assets/runtime-BQTM19Jm.css">
+    <link rel="stylesheet" crossorigin href="../assets/snowballRush-8RKgLeyq.css">
+  </head>
+  <body>
+    <main id="snowball-game">
+      <div id="snowball-canvas" aria-label="SNOWBALL RUSH game canvas"></div>
+      <header class="rush-hud">
+        <a class="rush-back" href="../" aria-label="ゲーム一覧へ戻る">←</a>
+        <div class="rush-stat"><span>SIZE</span><strong id="rush-size">0.55</strong></div>
+        <div class="rush-stat"><span>SMASH</span><strong id="rush-smash">0</strong></div>
+        <div class="rush-stat"><span>GOAL</span><strong><b id="rush-progress">0</b>%</strong></div>
+      </header>
+      <div class="rush-objective">
+        <span id="rush-kicker">01 · GROW</span>
+        <strong id="rush-objective">ドラッグして雪の多いラインへ</strong>
+      </div>
+      <div id="rush-event" class="rush-event" aria-live="polite">DRAG TO ROLL</div>
+      <footer class="rush-hint"><span>左右ドラッグでステア</span><span>A / D・← / →</span></footer>
+    </main>
+  </body>
+</html>

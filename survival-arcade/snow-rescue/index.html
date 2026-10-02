@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#d9edf5" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <meta name="description" content="雪を削り、埋もれた生存者を救助しながら除雪機と救助拠点を育てる3Dゲーム。" />
+    <title>SNOW RESCUE</title>
+    <script type="module" crossorigin src="../assets/snowRescue-DiBGqrTL.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-P2Xu9kJm.js">
+    <link rel="modulepreload" crossorigin href="../assets/runtime-DlwBDPwP.js">
+    <link rel="modulepreload" crossorigin href="../assets/movement-input-7FZgQj6R.js">
+    <link rel="stylesheet" crossorigin href="../assets/runtime-BQTM19Jm.css">
+    <link rel="stylesheet" crossorigin href="../assets/movement-input-FTTvBEOz.css">
+    <link rel="stylesheet" crossorigin href="../assets/snowRescue-DdDhC9u9.css">
+  </head>
+  <body>
+    <main id="snow-rescue-game">
+      <div id="snow-canvas" aria-label="SNOW RESCUE game canvas"></div>
+      <header class="snow-hud">
+        <a class="snow-back" href="../" aria-label="ゲーム一覧へ戻る">←</a>
+        <div class="snow-stat"><span>救助</span><strong><b id="rescued-count">0</b> / 5</strong></div>
+        <div class="snow-stat"><span>除雪</span><strong><b id="clear-percent">0</b>%</strong></div>
+        <div id="snow-range-stat" class="snow-stat" data-progressive-stat hidden><span>範囲</span><strong id="range-value">1.0×</strong></div>
+      </header>
+      <div class="snow-objective">
+        <span id="snow-objective-kicker">01 · 捜索</span>
+        <strong id="snow-objective-text">雪原へ移動 · 雪は自動で除雪</strong>
+      </div>
+      <div id="snow-event" class="snow-event" aria-live="polite"></div>
+      <div id="snow-joystick" class="snow-joystick" aria-hidden="true"><span id="snow-joystick-knob"></span></div>
+      <footer class="snow-hint"><span>ドラッグで移動</span><span>WASD / 矢印キー</span></footer>
+    </main>
+  </body>
+</html>
