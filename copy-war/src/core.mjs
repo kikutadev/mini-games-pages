@@ -86,7 +86,8 @@ export function addUnit(battle, side, type, x, y, overrides = {}) {
   const unit = {
     id: battle.nextId++, side, type, x, y, radius: stats.radius,
     hp: stats.hp, maxHp: stats.hp, powerScale:1, attackTimer: battle.rand() * .35,
-    windup: 0, attackTargetId: null, flash: 0, spawnGlow: .5,
+    windup: 0, attackTargetId: null, flash: 0, hurtPulse: 0,
+    attackPulse: 0, spawnGlow: .5,
     facing: side === 'blue' ? -1 : 1, step: battle.rand() * 8,
     copyGeneration: 0, sourceId: null, dead: false, ...overrides,
   };
@@ -134,6 +135,8 @@ export function copyEnemy(battle, sourceId, x, y) {
   }
   battle.lastClone = { type: copy.type, x: copy.x, y: copy.y, time: battle.time };
   emitRing(battle, copy.x, copy.y, 'copy', 42);
+  battle.effects.push({kind:'arrival',x:copy.x,y:copy.y,
+    radius:copy.radius+19,life:.46,totalLife:.46,color:'#b4f9ff'});
   emitParticles(battle, copy.x, copy.y, 19, '#8cf4ff', 100);
   triggerArrival(battle, copy);
   const frequency=7-battle.upgrades.resonance;
@@ -285,11 +288,15 @@ function damageUnit(b, unit, damage, side) {
   if (!unit || unit.dead || damage <= 0) return;
   unit.hp = Math.max(0, unit.hp - damage);
   unit.flash = .16;
+  unit.hurtPulse = .26;
   emitParticles(b, unit.x, unit.y, damage >= 35 ? 9 : 4,
     unit.side === 'blue' ? '#80e6fa' : '#ffb989', damage >= 35 ? 155 : 85);
   if (unit.hp > 0) return;
   unit.dead = true;
   b.kills[side]++;
+  // Keep a short visual-only defeat pose after the unit leaves combat.
+  b.effects.push({kind:'death',x:unit.x,y:unit.y,
+    radius:unit.radius,side:unit.side,life:.54,totalLife:.54});
   emitRing(b, unit.x, unit.y, side, unit.radius * 3);
   emitParticles(b, unit.x, unit.y, 13 + Math.ceil(unit.radius * .6),
     unit.side === 'blue' ? '#8df0ff' : '#ffb280', 165);
@@ -436,6 +443,9 @@ function slam(b, u, target, damage, radius, damageFortress = true) {
     damageGate(b, u.side, damage * .85, x, y);
   }
   emitRing(b, x, y, u.side, radius * 1.18);
+  if (damage >= 46 && radius >= 60)
+    b.effects.push({kind:'impact',x,y,radius:radius*.9,life:.4,totalLife:.4,
+      color:u.side==='blue'?'#aeebff':'#ffd49a'});
   emitParticles(b, x, y, 15 + Math.min(24, hits * 4), u.side === 'blue' ? '#b5f9ff' : '#ffc18d', 165);
   b.events.push({ kind: 'slam', side: u.side, hits, x, y, power: damage });
 }
@@ -448,6 +458,9 @@ function performBossAttack(b,u,arrival=false){
   if(u.type==='earthlord'){
     const epicenter=arrival?u:foes[0]??u;
     slam(b,u,epicenter,arrival?105:95,arrival?135:130,!arrival);
+    b.effects.push({kind:'fissure',x:epicenter.x,y:epicenter.y,
+      radius:arrival?123:113,angle:u.id*.47,
+      life:.62,totalLife:.62,color:u.side==='blue'?'#9eeafa':'#ffd49f'});
     b.events.push({kind:'boss-skill',type:u.type,x:epicenter.x,y:epicenter.y,side:u.side});
   }else if(u.type==='thunderbird'){
     // Visible chained lightning strikes multiple independent targets.
@@ -467,6 +480,9 @@ function performBossAttack(b,u,arrival=false){
     for(const angleOffset of [-.24,0,.24])
       shoot(b,u,target,{damage:arrival?58:47,splash:arrival?76:64,kind:'shell',
         speed:200,angleOffset});
+    for(const dx of [-18,0,18])
+      b.effects.push({kind:'muzzle',x:u.x+dx,y:u.y-38,radius:37,
+        life:.27,totalLife:.27,color:u.side==='blue'?'#cbfbff':'#ffe4a8'});
     b.events.push({kind:'boss-skill',type:u.type,x:u.x,y:u.y,side:u.side});
   }else if(u.type==='mirrorlord'){
     const allowed=foes.filter(e=>!isBoss(e.type));
@@ -479,7 +495,12 @@ function performBossAttack(b,u,arrival=false){
       const unit=addUnit(b,u.side,type,clamp(u.x+(i-(types.length-1)/2)*38,30,330),
         clamp(u.y+(u.side==='red'?45:-45),70,WORLD_HEIGHT-70),
         {powerScale:u.powerScale,spawnGlow:1});
-      if(unit){ emitRing(b,unit.x,unit.y,u.side,unit.radius+27); }
+      if(unit){
+        emitRing(b,unit.x,unit.y,u.side,unit.radius+27);
+        b.effects.push({kind:'portal',x:unit.x,y:unit.y,
+          radius:unit.radius+27,life:.64,totalLife:.64,
+          color:u.side==='blue'?'#9cefff':'#eec8ff'});
+      }
     }
     b.events.push({kind:'boss-skill',type:u.type,x:u.x,y:u.y,side:u.side});
   }
@@ -487,6 +508,7 @@ function performBossAttack(b,u,arrival=false){
 
 /** Execute an attack after its visually telegraphed wind-up ends. */
 function performAttack(b, u) {
+  u.attackPulse = .36;
   const stats = TYPES[u.type];
   const target = resolveTarget(b, u, u.attackTargetId);
   if (!target) return;
@@ -532,9 +554,14 @@ function performAttack(b, u) {
     return;
   } else if (target.gate) {
     damageGate(b, u.side, stats.damage * (u.powerScale ?? 1), target.x, target.y);
+    b.effects.push({kind:'slash',x:target.x,y:target.y,angle:0,
+      color:u.side==='blue'?'#b1faff':'#ffe1aa',life:.18,totalLife:.18});
   } else {
     damageUnit(b, target, stats.damage * (u.powerScale ?? 1), u.side);
     emitRing(b, target.x, target.y, u.side, 21);
+    b.effects.push({kind:'slash',x:target.x,y:target.y,
+      angle:(u.id%5-2)*.25,color:u.side==='blue'?'#b1faff':'#ffe1aa',
+      life:.21,totalLife:.21});
   }
 }
 
@@ -542,6 +569,8 @@ function performAttack(b, u) {
 function updateUnit(b, u, dt) {
   const stats = TYPES[u.type];
   u.flash = Math.max(0, u.flash - dt);
+  u.hurtPulse = Math.max(0, (u.hurtPulse??0) - dt);
+  u.attackPulse = Math.max(0, (u.attackPulse??0) - dt);
   u.spawnGlow = Math.max(0, u.spawnGlow - dt);
   u.step += dt * stats.speed / 10;
   u.attackTimer = Math.max(0, u.attackTimer - dt);
