@@ -20,7 +20,7 @@ export function createRandom(seed = 107) {
 /** Construct the initial playable world and spawn its first attackers. */
 export function createGame(seed = 107) {
   const state = {
-    time: 0, remaining: 82, core: { x: 180, y: 305, r: 25, hp: 100, maxHp: 100 },
+    time: 0, remaining: 82, core: { x: 180, y: 305, r: 25, hp: 120, maxHp: 120 },
     phase: 'playing', score: 0, kills: 0, combo: 0, comboTime: 0,
     cloneCount: 0, maxChain: 0, nextId: 1, enemiesSpawned: 0,
     spawnTimer: 4.3, clipboard: null, entities: [], particles: [], shockwaves: [],
@@ -45,7 +45,7 @@ function addEntity(state, data) {
 
 /** Spawn a hostile shooter with explicit visual identity and attack rhythm. */
 export function addEnemy(state, x, y, kind = 'blaster') {
-  const hp = kind === 'rocket' ? 45 : kind === 'bomber' ? 34 : kind === 'boss' ? 230 : 30;
+  const hp = kind === 'rocket' ? 28 : kind === 'bomber' ? 22 : kind === 'boss' ? 180 : 18;
   return addEntity(state, {
     kind: 'enemy', enemyKind: kind, x, y, vx: 0, vy: 0, r: kind === 'boss' ? 27 : kind === 'rocket' ? 15 : 13,
     hp, maxHp: hp, cooldown: 0.5 + state.rand() * 0.9, attackInterval:
@@ -107,6 +107,8 @@ function hitEnemy(state, enemy, damage, fromClone = false) {
   if (enemy.hp > 0) return;
   enemy.dead = true;
   state.kills++;
+  state.core.hp = Math.min(state.core.maxHp, state.core.hp + 4);
+  state.events.push({ type: 'repair', amount: 4 });
   state.combo++;
   state.comboTime = 3.5;
   state.score += (enemy.enemyKind === 'boss' ? 400 : 45) * Math.min(8, state.combo);

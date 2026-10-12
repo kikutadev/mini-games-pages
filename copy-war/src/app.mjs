@@ -156,13 +156,13 @@ function processEvents() {
 function updateUi(force = false) {
   topTime.textContent = Math.ceil(game.remaining);
   score.textContent = game.score.toLocaleString('ja-JP');
-  health.style.width = game.core.hp + '%';
-  healthText.textContent = game.core.hp + '%';
+  health.style.width = Math.round(game.core.hp / game.core.maxHp * 100) + '%';
+  healthText.textContent = Math.round(game.core.hp / game.core.maxHp * 100) + '%';
   const carrying = !!game.clipboard;
   selectionInfo.textContent = carrying ? game.clipboard.count + '個コピー中' : 'COPY';
   action.textContent = carrying ? '貼り付け先をタップ' : '敵の弾をタップ';
   arena.classList.toggle('carrying', carrying);
-  help.textContent = carrying ? 'コピー元の速度・向き・残り時間を保持' : 'ドラッグして複数まとめてコピー';
+  help.textContent = carrying ? '同じ向きに飛ぶ。敵の手前に貼ろう' : 'ドラッグして複数まとめてコピー';
   if (force) toast.classList.remove('visible');
 }
 
