@@ -435,8 +435,36 @@ function drawProjectile(p,t) {
 /** Draw particle trails and expanding rings above the characters. */
 function drawEffects() {
   for (const e of battle.effects) {
+    if(e.y < battle.cameraY-180 || e.y > battle.cameraY+SIZE.height+180)continue;
     const alpha = Math.min(1,e.life/e.totalLife);
-    if (e.kind === 'death') {
+    if (e.kind === 'shot') {
+      ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.angle);
+      ctx.globalAlpha=alpha*.8;ctx.shadowColor=e.color;ctx.shadowBlur=7;
+      ctx.strokeStyle=e.color;ctx.lineCap='round';
+      const radius=e.radius*(.65+(1-alpha)*.45);
+      if(e.role==='archer'){
+        ctx.lineWidth=2*alpha;
+        ctx.beginPath();ctx.moveTo(-radius*.8,-radius*.8);
+        ctx.lineTo(-radius*.2,0);ctx.lineTo(-radius*.8,radius*.8);ctx.stroke();
+      }else {
+        const petals=e.role==='cannon'||e.role==='fortress'?6:4;
+        ctx.lineWidth=2.3*alpha+.3;
+        for(let j=0;j<petals;j++){
+          const ang=j*Math.PI*2/petals;
+          ctx.beginPath();ctx.moveTo(Math.cos(ang)*radius*.20,Math.sin(ang)*radius*.20);
+          ctx.lineTo(Math.cos(ang)*radius,Math.sin(ang)*radius);ctx.stroke();
+        }
+        ctx.fillStyle=e.color;circle(0,0,2+radius*.18*alpha);
+      }
+      ctx.restore();
+    }else if (e.kind === 'footfall') {
+      ctx.save();ctx.translate(e.x,e.y);ctx.globalAlpha=alpha*.23;
+      ctx.strokeStyle=e.color;ctx.lineWidth=1.2;
+      const radius=e.radius*(.35+1.05*(1-alpha));
+      ctx.beginPath();ctx.ellipse(0,0,radius,radius*.35,0,0,Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+    }else if (e.kind === 'death') {
       ctx.save();ctx.translate(e.x,e.y);ctx.globalAlpha=Math.min(1,alpha*1.4);
       const r=e.radius;
       const flatten=1-alpha;
@@ -454,14 +482,47 @@ function drawEffects() {
         ctx.stroke();
       }
       ctx.restore();
-    } else if (e.kind === 'slash') {
-      ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.angle||0);
-      ctx.globalAlpha=alpha;ctx.shadowBlur=10;ctx.shadowColor=e.color;
-      ctx.strokeStyle=e.color;ctx.lineWidth=3*alpha+1.5;
-      ctx.beginPath();ctx.arc(0,0,24+11*(1-alpha),-Math.PI*.92,Math.PI*.30);ctx.stroke();
-      ctx.strokeStyle='#ffffffaf';ctx.lineWidth=1.1;
-      ctx.beginPath();ctx.arc(0,0,28+12*(1-alpha),-Math.PI*.77,Math.PI*.12);ctx.stroke();
+    } else if (e.kind === 'dash') {
+      ctx.save();ctx.globalAlpha=alpha*.9;
+      const angle=Math.atan2(e.ty-e.y,e.tx-e.x);
+      const dist=Math.hypot(e.tx-e.x,e.ty-e.y);
+      ctx.translate(e.x,e.y);ctx.rotate(angle);
+      ctx.shadowColor=e.color;ctx.shadowBlur=9;ctx.strokeStyle=e.color;
+      for(let i=0;i<4;i++) {
+        ctx.lineWidth=(1.3+i*.5)*alpha;
+        const off=(i-1.5)*9;
+        ctx.beginPath();ctx.moveTo(-14-i*12,off);
+        ctx.lineTo(dist+(1-alpha)*18,off*.3);ctx.stroke();
+      }
       ctx.restore();
+    } else if (e.kind === 'slash') {
+      ctx.save();ctx.globalAlpha=alpha;
+      const angle=e.angle??0;
+      const tx=e.x,ty=e.y;
+      const sx=e.fromX??tx,sy=e.fromY??ty;
+      const distance=Math.hypot(tx-sx,ty-sy);
+      const length=Math.min(49,Math.max(22,distance*.64));
+      ctx.translate(tx,ty);ctx.rotate(angle+Math.PI/2);
+      const progress=1-alpha;
+      const radius=16+9*progress;
+      ctx.strokeStyle=e.color;ctx.shadowColor=e.color;ctx.shadowBlur=12;
+      ctx.lineWidth=6*alpha+1;
+      ctx.beginPath();ctx.arc(0,0,radius,Math.PI*.85+progress*.7,
+        Math.PI*2.13+progress*.65);ctx.stroke();
+      ctx.strokeStyle='#ffffffeb';ctx.lineWidth=1.6*alpha+.5;
+      ctx.beginPath();ctx.arc(0,0,radius+4,Math.PI*.93+progress*.68,
+        Math.PI*1.98+progress*.65);ctx.stroke();
+      // The stroke travels from the actual sword hand, never detached at target.
+      ctx.restore();
+      if(distance>15){
+        ctx.save();ctx.globalAlpha=alpha*.6;
+        ctx.strokeStyle=e.color;ctx.lineWidth=1.8+alpha;
+        ctx.shadowColor=e.color;ctx.shadowBlur=8;
+        ctx.beginPath();ctx.moveTo(sx,sy);
+        ctx.quadraticCurveTo((sx+tx)/2+Math.sin(angle)*length*.5,
+          (sy+ty)/2-Math.cos(angle)*length*.5,tx,ty);ctx.stroke();
+        ctx.restore();
+      }
     } else if (e.kind === 'fissure') {
       ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.angle||0);ctx.globalAlpha=alpha;
       const growth=Math.min(1,(1-alpha)*4);

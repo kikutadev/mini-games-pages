@@ -1,3 +1,4 @@
+import { RELEASE_DURATION } from './motion.mjs';
 import { isBoss } from './bosses.mjs';
 import { WORLD_HEIGHT, CHAPTERS, gateForStage, stagesForChapter } from './progression.mjs';
 /**
@@ -98,7 +99,10 @@ export function addUnit(battle, side, type, x, y, overrides = {}) {
     hp: stats.hp*enemyFactor, maxHp: stats.hp*enemyFactor,
     powerScale:side==='red'?.67+battle.chapter*.045:1, attackTimer: battle.rand() * .35,
     windup: 0, attackTargetId: null, flash: 0, hurtPulse: 0, freezeTimer:0,spawnProtection:0,
-    attackPulse: 0, spawnGlow: .5,
+    attackPulse: 0, attackWindupTotal:stats.windup,
+    dashFromX:x,dashFromY:y,
+    walkBlend:0, motionSpeed:0, dashPulse:0, aimAngle:side==='blue'?-Math.PI/2:Math.PI/2,
+    spawnGlow: .5,
     facing: side === 'blue' ? -1 : 1, step: battle.rand() * 8,
     copyGeneration: 0, sourceId: null, dead: false, ...overrides,
   };
@@ -129,8 +133,10 @@ export function copyEnemy(battle, sourceId, x, y) {
   const position = fitDeployment(battle, x, y, source.radius);
   const bossBoost = isBoss(source.type) ? 1 + battle.upgrades.dominion * .20 : 1;
   const copy = addUnit(battle, 'blue', source.type, position.x, position.y, {
-    attackTimer: source.windup > 0 ? 0 : Math.min(source.attackTimer, .18),
+    attackTimer: source.windup > 0 ? TYPES[source.type].interval : Math.min(source.attackTimer, .18),
     windup: source.windup > 0 ? Math.max(.1, source.windup) : 0,
+    attackWindupTotal:source.attackWindupTotal,
+    aimAngle:source.aimAngle,
     copyGeneration: source.copyGeneration + 1,
     sourceId: source.id, facing: -1, spawnGlow: .9,
     spawnProtection:2.2,
@@ -414,22 +420,31 @@ function resolveTarget(b, unit, targetId) {
 
 /** Begin a timed physical attack that can be cloned while charging. */
 function beginAttack(unit, target) {
-  unit.attackTargetId = target.gate ? 'gate' : target.id;
-  unit.windup = TYPES[unit.type].windup;
-  unit.attackTimer = TYPES[unit.type].interval;
+  unit.attackTargetId=target.gate?'gate':target.id;
+  unit.attackWindupTotal=TYPES[unit.type].windup;
+  unit.windup=unit.attackWindupTotal;
+  unit.aimAngle=Math.atan2(target.y-unit.y,target.x-unit.x);
+  unit.attackTimer=TYPES[unit.type].interval;
 }
 
 /** Fire a projectile that travels through the battle rather than hitting instantly. */
 function shoot(b, u, target, opts = {}) {
   const angle = Math.atan2(target.y - u.y, target.x - u.x) + (opts.angleOffset ?? 0);
   const speed = opts.speed ?? 210;
+  const originX=u.x+Math.cos(angle)*(u.radius*.5);
+  const originY=u.y+Math.sin(angle)*(u.radius*.5);
   b.projectiles.push({
-    id: b.nextId++, x: u.x, y: u.y, vx: Math.cos(angle) * speed,
+    id: b.nextId++, x: originX, y: originY, vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed, side: u.side,
     kind: opts.kind ?? 'arrow', damage: (opts.damage ?? 12) * (opts.alreadyScaled ? 1 : (u.powerScale ?? 1)), splash: opts.splash ?? 0,
     radius: opts.kind === 'shell' ? 10 : opts.kind === 'orb' ? 7 : 4, ttl: 2.1, sourceType: u.type,
   });
-  emitParticles(b, u.x, u.y, 3, u.side === 'blue' ? '#bff9ff' : '#ffd19f', 45);
+  const shotSize=u.type==='cannon'||u.type==='fortress'?29:
+    u.type==='mage'?19:u.type==='archer'?13:10;
+  b.effects.push({kind:'shot',x:originX,y:originY,angle,role:u.type,
+    radius:shotSize,color:u.side==='blue'?'#c5fbff':'#ffe6be',
+    life:.18,totalLife:.18});
+  emitParticles(b, originX, originY, 3, u.side === 'blue' ? '#bff9ff' : '#ffd19f', 45);
 }
 
 /** Inflict an area strike with damage, knockback and deterministic event feedback. */
@@ -572,7 +587,7 @@ function performBossAttack(b,u,arrival=false){
 
 /** Execute an attack after its visually telegraphed wind-up ends. */
 function performAttack(b, u) {
-  u.attackPulse = .36;
+  u.attackPulse = RELEASE_DURATION;
   const stats = TYPES[u.type];
   const target = resolveTarget(b, u, u.attackTargetId);
   if (!target) return;
@@ -597,8 +612,13 @@ function performAttack(b, u) {
   } else if (u.type === 'raider') {
     // A charge cuts through a defensive front, striking an area behind the first line.
     const angle = Math.atan2(target.y - u.y, target.x - u.x);
-    u.x = clamp(u.x + Math.cos(angle) * 75, u.radius, SIZE.width-u.radius);
-    u.y = clamp(u.y + Math.sin(angle) * 75, 65+u.radius, WORLD_HEIGHT-65-u.radius);
+    const fromX=u.x,fromY=u.y;
+    u.x=clamp(u.x+Math.cos(angle)*75,u.radius,SIZE.width-u.radius);
+    u.y=clamp(u.y+Math.sin(angle)*75,65+u.radius,WORLD_HEIGHT-65-u.radius);
+    u.dashPulse=.16;
+    u.dashFromX=fromX;u.dashFromY=fromY;
+    b.effects.push({kind:'dash',x:fromX,y:fromY,tx:u.x,ty:u.y,
+      color:u.side==='blue'?'#c0faff':'#ffcb9b',life:.32,totalLife:.32});
     slam(b, u, { x:u.x, y:u.y }, 33, 32);
   } else if (u.type === 'cannon') {
     shoot(b,u,target,{damage:stats.damage,splash:65,kind:'orb',speed:190});
@@ -618,14 +638,16 @@ function performAttack(b, u) {
     return;
   } else if (target.gate) {
     damageGate(b, u.side, stats.damage * (u.powerScale ?? 1), target.x, target.y);
-    b.effects.push({kind:'slash',x:target.x,y:target.y,angle:0,
-      color:u.side==='blue'?'#b1faff':'#ffe1aa',life:.18,totalLife:.18});
+    b.effects.push({kind:'slash',x:target.x,y:target.y,
+      fromX:u.x,fromY:u.y,angle:u.aimAngle,
+      color:u.side==='blue'?'#b1faff':'#ffe1aa',life:.24,totalLife:.24});
   } else {
     damageUnit(b, target, stats.damage * (u.powerScale ?? 1), u.side);
     emitRing(b, target.x, target.y, u.side, 21);
     b.effects.push({kind:'slash',x:target.x,y:target.y,
-      angle:(u.id%5-2)*.25,color:u.side==='blue'?'#b1faff':'#ffe1aa',
-      life:.21,totalLife:.21});
+      fromX:u.x,fromY:u.y,angle:u.aimAngle,
+      color:u.side==='blue'?'#b1faff':'#ffe1aa',
+      life:.24,totalLife:.24});
   }
 }
 
@@ -635,10 +657,13 @@ function updateUnit(b, u, dt) {
   u.flash = Math.max(0, u.flash - dt);
   u.hurtPulse = Math.max(0, (u.hurtPulse??0) - dt);
   u.attackPulse = Math.max(0, (u.attackPulse??0) - dt);
+  u.dashPulse=Math.max(0,(u.dashPulse??0)-dt);
+  u.walkBlend=Math.max(0,(u.walkBlend??0)*Math.exp(-dt*9));
   u.spawnGlow = Math.max(0, u.spawnGlow - dt);
   u.freezeTimer = Math.max(0,(u.freezeTimer??0)-dt);
   u.spawnProtection=Math.max(0,(u.spawnProtection??0)-dt);
-  u.step += dt * stats.speed / 10;
+  // Gait phase tracks actual distance covered, not elapsed time. Stationary
+  // units now plant their feet rather than skating in place.
   u.attackTimer = Math.max(0, u.attackTimer - dt);
   if (u.windup > 0) {
     u.windup -= dt;
@@ -666,6 +691,7 @@ function updateUnit(b, u, dt) {
   let move = d > reach * .79 ? 1 : 0;
   if (['archer','mage','healer'].includes(u.type) && d < reach * .42) move = -.52;
   if (move !== 0) {
+    const previousX=u.x, previousY=u.y;
     // March briskly through empty space; slow down on entering weapon range.
     const advanceBoost = u.side === 'blue' && d > 270 ? 1.8 : 1;
     const slow=u.freezeTimer>0?.38:1;
@@ -701,8 +727,23 @@ function updateUnit(b, u, dt) {
     if (u.side === 'blue' && b.gateRed.hp > 0) {
       u.y = Math.max(u.y, b.gateRed.y + b.gateRed.radius + u.radius + 5);
     }
+    const travel=Math.hypot(u.x-previousX,u.y-previousY);
+    if(travel>.08){
+      const previousStride=Math.floor(u.step*2.25/Math.PI);
+      u.step+=Math.min(15,travel)*.085;
+      if(u.radius>=20 && previousStride!==Math.floor(u.step*2.25/Math.PI)
+        && u.y>b.cameraY-30 && u.y<b.cameraY+SIZE.height+30
+        && b.effects.length<380){
+        b.effects.push({kind:'footfall',x:u.x,y:u.y+u.radius*.73,
+          radius:u.radius*.75,life:.34,totalLife:.34,
+          color:u.side==='blue'?'#9adae0':'#d9af9e'});
+      }
+      u.motionSpeed=travel/Math.max(dt,.001);
+      u.walkBlend=Math.min(1,u.walkBlend+dt*11);
+      u.aimAngle=Math.atan2(target.y-u.y,target.x-u.x);
+    } else u.motionSpeed=0;
     if (Math.abs(vy) > .1) u.facing = Math.sign(vy);
-  }
+  } else u.motionSpeed=0;
 }
 
 /** Detect a projectile's first impact, including explosive blast radius. */
