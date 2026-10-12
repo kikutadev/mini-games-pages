@@ -406,7 +406,7 @@ export function updateBattle(b, dt) {
     spawnAllySupport(b);
     b.allyTimer += 6.8;
   }
-  if (!b.bossSpawned && (b.time >= 22 || b.gateRed.hp < 470)) {
+  if (!b.bossSpawned && (b.time >= 12 || b.gateRed.hp < 470)) {
     b.bossSpawned = true;
     addUnit(b, 'red', 'titan', 180, 122, { attackTimer: .8 });
     b.events.push({ kind: 'boss' });
