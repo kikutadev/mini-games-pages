@@ -36,11 +36,11 @@ export function createBattle(seed = 19) {
     nextId: 1, units: [], projectiles: [], effects: [], floating: [], events: [],
     lastClone: null, copied: 0, kills: { blue: 0, red: 0 }, wave: 1,
     stage: 0, gates: STAGES.map((_, index) => gateForStage(index)),
-    cameraY: WORLD_HEIGHT - SIZE.height, cameraTarget: WORLD_HEIGHT - SIZE.height,
+    cameraY: WORLD_HEIGHT - SIZE.height,
     gateBlue: { x: 180, y: WORLD_HEIGHT - 56, hp: 640, maxHp: 640, radius: 31 },
     gateRed: null,
     enemyTimer: 12, allyTimer: 8.0, actionCount: 0, synergy: 0,
-    secured: [], explored: 0, routedTimer: 0,
+    secured: [], explored: 0, commandMorale: 100, moraleWarning: false,
   };
   battle.gateRed = battle.gates[0];
   addUnit(battle, 'blue', 'sword', 136, 1945);
@@ -93,11 +93,7 @@ export function copyEnemy(battle, sourceId, x, y) {
   if (battle.result !== 'playing') return { ok: false, reason: 'ended' };
   const source = battle.units.find(u => u.id === sourceId && !u.dead && u.side === 'red');
   if (!source) return { ok: false, reason: 'missing' };
-  const position = { x: clamp(x, 21, 339), y: clamp(y, bCameraMin(battle) + 65, battle.cameraY + SIZE.height - 60) };
-  if (distance(position, battle.gateBlue) < battle.gateBlue.radius + source.radius + 8 ||
-      distance(position, battle.gateRed) < battle.gateRed.radius + source.radius + 8) {
-    return { ok: false, reason: 'blocked' };
-  }
+  const position = fitDeployment(battle, x, y, source.radius);
   const copy = addUnit(battle, 'blue', source.type, position.x, position.y, {
     attackTimer: source.windup > 0 ? 0 : Math.min(source.attackTimer, .18),
     windup: source.windup > 0 ? Math.max(.1, source.windup) : 0,
@@ -110,21 +106,110 @@ export function copyEnemy(battle, sourceId, x, y) {
   battle.lastClone = { type: copy.type, x: copy.x, y: copy.y, time: battle.time };
   emitRing(battle, copy.x, copy.y, 'copy', 42);
   emitParticles(battle, copy.x, copy.y, 19, '#8cf4ff', 100);
-  // Large copied soldiers crash into the field as immediate, visible reinforcements.
-  // The shockwave uses the same damage/knockback rule as their ordinary area attack.
-  if (copy.type === 'guardian' || copy.type === 'titan') {
-    slam(battle, copy, { x: copy.x, y: copy.y },
-      copy.type === 'titan' ? 86 : 65,
-      copy.type === 'titan' ? 132 : 105, false);
-  }
+  triggerArrival(battle, copy);
   const baseScore = source.type === 'titan' ? 4 : source.type === 'guardian' ? 3 : 1;
   battle.synergy += baseScore;
   battle.events.push({ kind: 'clone', type: source.type, x: copy.x, y: copy.y });
   return { ok: true, unit: copy };
 }
 
+/** Each copied class arrives with a distinct tactical consequence.
+ * Even a healer or bowman can decisively reverse the situation in one gesture.
+ * Permanent unit strength remains identical to the source's class.
+ */
+function triggerArrival(b, copy) {
+  if (copy.type === 'guardian' || copy.type === 'titan') {
+    slam(b, copy, copy, copy.type === 'titan' ? 86 : 65,
+      copy.type === 'titan' ? 132 : 105, false);
+    return;
+  }
+  if (copy.type === 'healer') {
+    let healed = 0;
+    for (const ally of b.units) {
+      if (ally.dead || ally.side !== 'blue' || distance(copy, ally) > 150) continue;
+      const restored = Math.min(52, ally.maxHp - ally.hp);
+      if (restored <= 0) continue;
+      ally.hp += restored;
+      healed++;
+      emitRing(b, ally.x, ally.y, 'copy', ally.radius + 20);
+      emitParticles(b, ally.x, ally.y, 6, '#b8fbd4', 75);
+    }
+    if (healed) b.events.push({ kind:'burst-heal', targets:healed, x:copy.x, y:copy.y });
+    return;
+  }
+  // Choose threats near the deployment. A remote target must not produce wasted shots.
+  const threats = b.units
+    .filter(e => !e.dead && e.side === 'red' && distance(e, copy) < 380)
+    .sort((a, c) => distance(a, copy) - distance(c, copy));
+  if (!threats.length) return;
+  if (copy.type === 'archer') {
+    const flyers = threats.filter(e => e.type === 'flier');
+    const primary = flyers[0] ?? threats[0];
+    for (let i = 0; i < 3; i++) {
+      const target = flyers[i] ?? threats[i] ?? primary;
+      shoot(b, copy, target, { damage: 15, kind:'arrow', speed: 330,
+        angleOffset: (i - 1) * .045 });
+    }
+    b.events.push({ kind:'volley', x:copy.x, y:copy.y, targetType:primary.type });
+  } else if (copy.type === 'mage') {
+    shoot(b, copy, threats[0], { damage: 42, splash: 50, kind:'orb', speed: 200 });
+  } else if (copy.type === 'flier') {
+    const priority = threats.find(u => ['healer','archer','mage'].includes(u.type)) ?? threats[0];
+    for (const angleOffset of [-.09,.09]) {
+      shoot(b, copy, priority, { damage: 15, kind:'spark', speed: 270, angleOffset });
+    }
+  } else if (copy.type === 'raider' && distance(copy, threats[0]) < 165) {
+    performAttack(b, copy);
+    // The next action still uses the source's regular cooldown.
+    copy.attackTimer = TYPES.raider.interval;
+  }
+}
+
 /** Create a particle burst that signals hit impact without spawning game objects. */
-function bCameraMin(b) { return b.cameraY; }
+/** Return the exact future copy position for the drag ghost and the game engine. */
+export function previewCopyLocation(b, sourceId, x, y) {
+  const source = b.units.find(u => u.id === sourceId && !u.dead && u.side === 'red');
+  return source ? fitDeployment(b, x, y, source.radius) : null;
+}
+
+/** Prefer the gesture's location while preventing fort and allied-unit overlap. */
+function fitDeployment(b, x, y, radius) {
+  const minY = b.cameraY + 65, maxY = b.cameraY + SIZE.height - 60;
+  const original = { x: clamp(x, 21, 339), y: clamp(y, minY, maxY) };
+  const friends = b.units.filter(u => u.side === 'blue' && !u.dead);
+  function freeOfFort(x, y) {
+    const point = { x: clamp(x, 21, 339), y: clamp(y, minY, maxY) };
+    for (const fortress of [b.gateBlue, b.gateRed]) {
+      const minDistance = fortress.radius + radius + 9;
+      const dx = point.x - fortress.x;
+      const dy = point.y - fortress.y;
+      const d = Math.hypot(dx, dy);
+      if (d >= minDistance) continue;
+      const nx = d < .001 ? 0 : dx / d;
+      const ny = d < .001 ? (fortress === b.gateBlue ? -1 : 1) : dy / d;
+      point.x = clamp(fortress.x + nx * minDistance, 21, 339);
+      point.y = clamp(fortress.y + ny * minDistance, minY, maxY);
+    }
+    return point;
+  }
+  let best = null, bestScore = Infinity;
+  for (const spread of [0, 26, 50, 73]) {
+    for (let direction = 0; direction < (spread ? 10 : 1); direction++) {
+      const angle = direction * Math.PI * 2 / 10;
+      const candidate = freeOfFort(original.x + Math.cos(angle)*spread,
+        original.y + Math.sin(angle)*spread);
+      let overlap = 0;
+      for (const ally of friends) {
+        const width = Math.max(0, radius + ally.radius + 3 - distance(candidate, ally));
+        overlap += width * width;
+      }
+      const score = overlap + spread * .07;
+      if (score < bestScore) { bestScore = score; best = candidate; }
+      if (overlap === 0) return candidate;
+    }
+  }
+  return best;
+}
 
 function emitParticles(b, x, y, amount, color, speed = 85) {
   for (let i = 0; i < amount && b.effects.length < 650; i++) {
@@ -168,13 +253,14 @@ function damageUnit(b, unit, damage, side) {
 function damageGate(b, side, damage, x, y) {
   if (b.result !== 'playing' || side === 'red') return;
   const gate = side === 'blue' ? b.gateRed : b.gateBlue;
-  gate.hp = Math.max(0, gate.hp - damage);
+  // No tedious post-battle drilling: an undefended fortress falls rapidly.
+  const defendersRemaining = b.units.some(u => u.side === 'red' && !u.dead &&
+    Math.abs(u.y - gate.y) < 235);
+  const siegeDamage = defendersRemaining ? damage : damage * 2.4;
+  gate.hp = Math.max(0, gate.hp - siegeDamage);
   emitRing(b, x, y, side, 23);
   if (gate.hp > 0) return;
-  if (side === 'red') {
-    b.result = 'lost';
-    b.events.push({ kind: 'end', result: b.result });
-  } else {
+  {
     const clearedStage = b.stage;
     b.secured.push(clearedStage);
     if (clearedStage >= STAGES.length - 1) {
@@ -182,12 +268,12 @@ function damageGate(b, side, damage, x, y) {
       b.events.push({ kind: 'end', result: b.result });
     } else {
       b.stage++;
-      b.cameraTarget = clamp(STAGES[b.stage].entry - 230, 0, WORLD_HEIGHT - SIZE.height);
       b.gateRed = b.gates[b.stage];
       b.enemyTimer = 7.5;
       b.allyTimer = Math.min(b.allyTimer, 3);
       deployDefenders(b, b.stage);
       deployCapturedReinforcements(b, gate.y);
+      b.commandMorale = Math.min(100, b.commandMorale + 38);
       b.events.push({ kind: 'checkpoint', stage: b.stage, label: STAGES[b.stage].name });
       // A scroll preview brings the next adversary into view instead of a hard scene cut.
     }
@@ -202,8 +288,12 @@ function acquireTarget(b, u) {
     if (opponent.dead || opponent.side === u.side) continue;
     const dx = opponent.x - u.x, dy = opponent.y - u.y;
     const d2 = dx * dx + dy * dy;
-    // Archers hunt flyers so giant-only armies cannot efficiently clear aerial squads.
-    const priority = u.type === 'archer' && opponent.type === 'flier' ? .13 : 1;
+    // Ground melee never chases a flying unit that it cannot hit.
+    if (opponent.type === 'flier' && ['sword', 'guardian', 'titan', 'raider'].includes(u.type)) continue;
+    // Flyers bypass the front to pressure archers/healers; archers counter flyers.
+    const priority = u.type === 'archer' && opponent.type === 'flier' ? .10
+      : u.type === 'flier' && ['healer','archer','mage'].includes(opponent.type) ? .28
+      : 1;
     const weighted = d2 * priority;
     if (weighted < best) { target = opponent; best = weighted; }
   }
@@ -249,7 +339,7 @@ function beginAttack(unit, target) {
 
 /** Fire a projectile that travels through the battle rather than hitting instantly. */
 function shoot(b, u, target, opts = {}) {
-  const angle = Math.atan2(target.y - u.y, target.x - u.x);
+  const angle = Math.atan2(target.y - u.y, target.x - u.x) + (opts.angleOffset ?? 0);
   const speed = opts.speed ?? 210;
   b.projectiles.push({
     id: b.nextId++, x: u.x, y: u.y, vx: Math.cos(angle) * speed,
@@ -345,17 +435,15 @@ function updateUnit(b, u, dt) {
     return;
   }
 
-  const target = acquireTarget(b, u);
+  const friend = u.type === 'healer' ? acquireHealTarget(b, u) : null;
+  const target = friend ?? acquireTarget(b, u);
   if (!target) return;
   const d = distance(u, target) || 1;
   if (target.rally && d < 28) return;
-  const reach = stats.range + (target.radius ?? 0);
-  if (u.type === 'healer') {
-    const friend = acquireHealTarget(b, u);
-    if (friend && u.attackTimer <= 0 && distance(u, friend) <= 132) {
-      beginAttack(u, friend);
-      return;
-    }
+  const reach = friend ? 117 : stats.range + (target.radius ?? 0);
+  if (friend && u.attackTimer <= 0 && d <= 132) {
+    beginAttack(u, friend);
+    return;
   }
   if (!target.rally && d <= reach && u.attackTimer <= 0) {
     beginAttack(u, target);
@@ -364,21 +452,33 @@ function updateUnit(b, u, dt) {
   let move = d > reach * .79 ? 1 : 0;
   if (['archer','mage','healer'].includes(u.type) && d < reach * .42) move = -.52;
   if (move !== 0) {
-    let vx = (target.x - u.x) / d * stats.speed * dt * move;
-    let vy = (target.y - u.y) / d * stats.speed * dt * move;
+    // March briskly through empty space; slow down on entering weapon range.
+    const advanceBoost = u.side === 'blue' && d > 270 ? 1.8 : 1;
+    let vx = (target.x - u.x) / d * stats.speed * dt * move * advanceBoost;
+    let vy = (target.y - u.y) / d * stats.speed * dt * move * advanceBoost;
     u.x += vx;
     u.y += vy;
-    // Soldiers softly repel allied bodies, preserving readability of formations.
+    // Spread the army into readable lanes instead of stacking at the same center point.
+    // Calculate one bounded impulse rather than pushing the unit once per neighbor.
+    let separateX = 0, separateY = 0, neighbors = 0;
     for (const ally of b.units) {
       if (ally.dead || ally.id === u.id || ally.side !== u.side) continue;
-      const dx = u.x - ally.x, dy = u.y - ally.y;
-      const radius = u.radius + ally.radius;
-      const d2 = dx * dx + dy * dy;
-      if (d2 > 1 && d2 < radius * radius) {
-        const factor = (radius - Math.sqrt(d2)) * .055;
-        u.x += dx / Math.sqrt(d2) * factor;
-        u.y += dy / Math.sqrt(d2) * factor;
+      let dx = u.x - ally.x, dy = u.y - ally.y;
+      let d = Math.hypot(dx, dy);
+      const space = u.radius + ally.radius + 6;
+      if (d >= space) continue;
+      if (d < .5) {
+        const angle = (u.id * 2.399963 + ally.id * .51);
+        dx = Math.cos(angle); dy = Math.sin(angle); d = 1;
       }
+      const pressure = (space - d) / space;
+      separateX += dx/d * pressure;
+      separateY += dy/d * pressure;
+      neighbors++;
+    }
+    if (neighbors) {
+      u.x += clamp(separateX * 7, -6, 6);
+      u.y += clamp(separateY * 7, -6, 6);
     }
     u.x = clamp(u.x, u.radius, SIZE.width - u.radius);
     u.y = clamp(u.y, 66 + u.radius, WORLD_HEIGHT - 67 - u.radius);
@@ -463,10 +563,12 @@ function deployCapturedReinforcements(b, y) {
 /** Camera advances with the living army without teleporting or changing world physics. */
 function updateCamera(b, dt) {
   const allies = b.units.filter(u => u.side === 'blue' && !u.dead);
-  const tip = allies.length ? Math.min(...allies.map(u => u.y)) : b.cameraY + 350;
+  const front = allies.map(u => u.y).sort((a, c) => a - c);
+  const tip = front.length ? front[Math.floor((front.length - 1) * .18)] : b.cameraY + 350;
   const sectorFloor = Math.max(0, b.gateRed.y - 200);
-  const target = Math.max(sectorFloor,
-    Math.min(clamp(tip - 365, 0, WORLD_HEIGHT - SIZE.height), b.cameraTarget));
+  // Keep the allied frontline lower-middle and next defenders in the upper half.
+  // A newly copied forward scout must not yank the camera away from the army.
+  const target = Math.max(sectorFloor, clamp(tip - 450, 0, WORLD_HEIGHT - SIZE.height));
   if (target < b.cameraY) b.cameraY += (target - b.cameraY) * Math.min(1, dt * 2.1);
   b.cameraY = clamp(b.cameraY, 0, WORLD_HEIGHT - SIZE.height);
   // The protected command convoy advances with the camera, so threats stay actionable.
@@ -505,10 +607,23 @@ export function updateBattle(b, dt) {
     return e.life > 0;
   });
   b.floating = b.floating.filter(e => { e.life -= dt; e.y -= dt * 20; return e.life > 0; });
-  // A collapse is recoverable for a short window by copying an enemy immediately.
-  const remainingAllies = b.units.filter(u => u.side === 'blue').length;
-  b.routedTimer = remainingAllies < 2 ? b.routedTimer + dt : 0;
-  if (b.routedTimer > 24 && b.result === 'playing') {
+  // Threat comes from losing the frontline, not a hidden/offscreen base's HP.
+  const blue = b.units.filter(u => u.side === 'blue');
+  const visibleReds = b.units.filter(u => u.side === 'red' &&
+    u.y >= b.cameraY - 50 && u.y <= b.cameraY + SIZE.height + 70);
+  const strength = units => units.reduce((sum, u) =>
+    sum + (u.hp / u.maxHp) * (u.type === 'titan' ? 5
+      : u.type === 'guardian' ? 2.8 : u.type === 'mage' ? 1.6 : 1), 0);
+  const alliedPower = strength(blue);
+  const hostilePower = strength(visibleReds);
+  const overwhelmed = alliedPower < 1 || hostilePower > alliedPower * 1.8;
+  b.commandMorale = clamp(b.commandMorale + dt * (overwhelmed ? -3.7 : 2.8), 0, 100);
+  if (!b.moraleWarning && b.commandMorale < 30) {
+    b.moraleWarning = true;
+    b.events.push({ kind: 'morale-low' });
+  }
+  if (b.commandMorale > 60) b.moraleWarning = false;
+  if (b.commandMorale <= 0 && b.result === 'playing') {
     b.result = 'lost';
     b.events.push({ kind: 'end', result: b.result });
   }

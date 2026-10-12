@@ -1,6 +1,6 @@
 import { STAGES } from './progression.mjs';
 import {
-  SIZE, TYPES, createBattle, updateBattle, findCopyTarget, copyEnemy,
+  SIZE, TYPES, createBattle, updateBattle, findCopyTarget, copyEnemy, previewCopyLocation,
 } from './core.mjs';
 
 const canvas = document.querySelector('#game');
@@ -17,6 +17,16 @@ const toast = document.querySelector('#toast');
 const instruction = document.querySelector('#instruction');
 const subInstruction = document.querySelector('#sub-instruction');
 const cancelButton = document.querySelector('#cancel');
+const ROLE_HINTS = Object.freeze({
+  sword:'高速近接戦・前衛の穴埋め',
+  archer:'出現時に三連矢・飛行兵に強い',
+  guardian:'着地衝撃で地上の敵を吹き飛ばす',
+  mage:'出現時に範囲魔法・集団と飛行兵に強い',
+  healer:'出現と同時に味方をまとめて回復',
+  titan:'巨大地震で敵陣を一気に制圧',
+  raider:'出現直後に敵の背後へ突進',
+  flier:'飛行しながら後衛を攻撃',
+});
 
 let battle = createBattle();
 let running = false;
@@ -113,7 +123,8 @@ function updateHud(force = false) {
   document.querySelector('#red-label').textContent = `防衛線 ${battle.stage+1}/${STAGES.length}・${STAGES[battle.stage].name}`;
   document.querySelector('#stage-progress').style.width = `${(battle.secured.length / STAGES.length) * 100}%`;
   const alliedUnits = battle.units.filter(u => u.side === 'blue').length;
-  allyHealth.style.width = Math.min(100, alliedUnits / 20 * 100) + '%';
+  allyHealth.style.width = battle.commandMorale + '%';
+  allyHealth.classList.toggle('low', battle.commandMorale < 30);
   enemyHealth.style.width = Math.max(0, battle.gateRed.hp / battle.gateRed.maxHp * 100) + '%';
   blueCount.textContent = alliedUnits + '体';
   redCount.textContent = battle.units.filter(u => u.side === 'red').length + '体';
@@ -125,9 +136,11 @@ function updateHud(force = false) {
   instruction.textContent = carrying && unit
     ? TYPES[unit.type].label + 'の味方を好きな場所に置く'
     : '赤い敵をつかんで、味方側へ引っ張る';
-  subInstruction.textContent = carrying
-    ? '指を離すと味方を複製。敵本体は消えない。'
-    : '大きな敵もボスもコピー可能。何度でも増やせる。';
+  subInstruction.textContent = carrying && unit
+    ? ROLE_HINTS[unit.type]
+    : battle.commandMorale < 30
+      ? '前線が崩壊寸前！ 敵をコピーして立て直そう。'
+      : '強敵もボスもコピー可能。配置で戦況を変えよう。';
 }
 
 /** Consume events from the combat system and map them to sound and visual feedback. */
@@ -136,6 +149,13 @@ function handleEvents() {
     if (event.kind === 'clone') {
       beep(event.type === 'titan' ? 160 : 460, .21, .06, 'triangle', 2.25);
       notify(TYPES[event.type].label + 'が味方になった！', 1.0);
+    } else if (event.kind === 'burst-heal') {
+      beep(650, .21, .055, 'sine', 1.7);
+    } else if (event.kind === 'morale-low') {
+      notify('劣勢！ 強い敵をコピーして立て直そう', 2.2);
+      beep(190, .4, .05, 'triangle', .65);
+    } else if (event.kind === 'volley') {
+      beep(730, .1, .03, 'triangle', .7);
     } else if (event.kind === 'slam') {
       beep(event.side === 'blue' ? 125 : 100, .19, .07, 'sawtooth', .42);
       shake = Math.min(6, shake + (event.power >= 70 ? 3.7 : 2.2));
@@ -447,8 +467,9 @@ function drawDrag() {
   const source = battle.units.find(u => u.id === id && !u.dead);
   if (!source) return;
   const pos = drag?.position ?? hovered ?? { x: 180, y: battle.cameraY + 410 };
-  const x = Math.max(15, Math.min(345,pos.x));
-  const y = Math.max(battle.cameraY+65,Math.min(battle.cameraY + SIZE.height-65,pos.y));
+  const deployment = previewCopyLocation(battle, id, pos.x, pos.y);
+  if (!deployment) return;
+  const {x,y} = deployment;
   ctx.save();
   ctx.setLineDash([8,5]);ctx.lineWidth=2.5;ctx.strokeStyle='#b1f7ffb0';
   ctx.beginPath();ctx.moveTo(source.x,source.y);ctx.quadraticCurveTo(source.x+35,(source.y+y)/2,x,y);ctx.stroke();
@@ -516,7 +537,10 @@ function frame(now) {
   const dt = Math.max(0,Math.min(.05,(now-(lastTime||now))/1000));
   lastTime=now;
   if (running) {
-    updateBattle(battle,dt*(drag?.unitId ? .72 : slowFrames>0 ? .75 : 1));
+    // Tactical aiming holds the battlefield, so a selected enemy cannot die under the finger.
+    if (!drag && pendingSourceId === null) {
+      updateBattle(battle,dt*(slowFrames>0 ? .75 : 1));
+    }
     if (slowFrames>0) slowFrames--;
     handleEvents();
     if (battle.result !== 'playing') finish();
