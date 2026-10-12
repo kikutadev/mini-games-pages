@@ -49,3 +49,4 @@ button:focus-visible{outline:3px solid #a8f6ff;outline-offset:3px}
 #start span{font-size:23px}
 .intro-card .intro-footnote{margin:13px 0 0;text-align:center;font-size:11px;color:#9fbacf}
 @media(max-height:710px){.hud{height:42px}.enemy-header,.friend-header{height:30px}.control{height:54px}.control-text strong{font-size:11px}.control-text span{font-size:9px}.intro-card{padding:17px 22px}.intro-graphic{height:90px}.intro-enemy,.intro-ally{width:49px;height:49px}.intro-card h1{font-size:26px}.intro-card p{margin-bottom:12px;font-size:12px}#start{height:47px}}
+.stage-line{height:4px;align-self:stretch;background:#1d3247;overflow:hidden;border-radius:4px;flex-shrink:0;margin:0 7px 4px}.stage-line span{display:block;width:0;height:100%;background:linear-gradient(90deg,#88f4fe,#ffdc9b);transition:width 450ms ease}.enemy-header .faction{font-size:11px}.enemy-header .faction small{font-size:9px}

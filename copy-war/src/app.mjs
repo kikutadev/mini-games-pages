@@ -1,3 +1,4 @@
+import { STAGES } from './progression.mjs';
 import {
   SIZE, TYPES, createBattle, updateBattle, findCopyTarget, copyEnemy,
 } from './core.mjs';
@@ -59,7 +60,7 @@ function toWorld(event) {
   const rect = canvas.getBoundingClientRect();
   return {
     x: (event.clientX - rect.left) / rect.width * SIZE.width,
-    y: (event.clientY - rect.top) / rect.height * SIZE.height,
+    y: (event.clientY - rect.top) / rect.height * SIZE.height + battle.cameraY,
   };
 }
 
@@ -82,7 +83,7 @@ function start() {
   lastTime = performance.now();
   uiTime = -1;
   updateHud(true);
-  notify('赤い巨兵をつかんで、下に引っ張ろう', 3.5);
+  notify('巨兵を掴んで下へドラッグ！味方が増える', 3.5);
   beep(350, .12, .06, 'triangle', 1.6);
 }
 
@@ -94,9 +95,9 @@ function finish() {
   const won = battle.result === 'won';
   document.querySelector('#overlay-title').innerHTML = won
     ? '敵の拠点を<br><em>制圧した！</em>'
-    : '味方の拠点が<br><em>陥落した…</em>';
+    : '進軍失敗…<br><em>再挑戦しよう。</em>';
   document.querySelector('#overlay-description').innerHTML =
-    'コピー ' + battle.copied + '体　／　撃破 ' + battle.kills.blue + '体<br>' +
+    '突破 ' + battle.secured.length + '/3　／　コピー ' + battle.copied + '体<br>' +
     (won ? '奪った戦力で、敵の軍勢を上回った。' : '敵の強さを、もっと味方に取り込もう。');
   button.innerHTML = 'もう一度プレイ <span>→</span>';
   overlay.hidden = false;
@@ -109,9 +110,12 @@ function updateHud(force = false) {
   if (stamp === uiTime && !force) return;
   uiTime = stamp;
   timeText.textContent = Math.max(0, Math.ceil(battle.timeLimit - battle.time));
-  allyHealth.style.width = Math.max(0, battle.gateBlue.hp / battle.gateBlue.maxHp * 100) + '%';
+  document.querySelector('#red-label').textContent = `防衛線 ${battle.stage+1}/${STAGES.length}・${STAGES[battle.stage].name}`;
+  document.querySelector('#stage-progress').style.width = `${(battle.secured.length / STAGES.length) * 100}%`;
+  const alliedUnits = battle.units.filter(u => u.side === 'blue').length;
+  allyHealth.style.width = Math.min(100, alliedUnits / 20 * 100) + '%';
   enemyHealth.style.width = Math.max(0, battle.gateRed.hp / battle.gateRed.maxHp * 100) + '%';
-  blueCount.textContent = battle.units.filter(u => u.side === 'blue').length + '体';
+  blueCount.textContent = alliedUnits + '体';
   redCount.textContent = battle.units.filter(u => u.side === 'red').length + '体';
 
   const carrying = pendingSourceId !== null || !!drag;
@@ -138,6 +142,9 @@ function handleEvents() {
     } else if (event.kind === 'boss') {
       notify('巨神出現！ このボスもコピーできる', 3.2);
       beep(115, .5, .1, 'sawtooth', 1.5);
+    } else if (event.kind === 'checkpoint') {
+      notify(`突破！ 次は ${event.label}`, 3.3);
+      beep(460, .52, .08, 'triangle', 2.1);
     } else if (event.kind === 'wave' && event.wave > 3) {
       notify('敵の援軍が到着！', 1.3);
     } else if (event.kind === 'titan-down') {
@@ -171,14 +178,16 @@ canvas.addEventListener('pointerdown', event => {
   const pt = toWorld(event);
   if (pendingSourceId !== null) {
     const clicked = findCopyTarget(battle, pt.x, pt.y);
-    if (clicked && clicked.id !== pendingSourceId) {
-      pendingSourceId = clicked.id;
+    if (clicked) {
+      // A selected source must never block the direct gesture on another enemy.
+      pendingSourceId = null;
+      drag = { unitId: clicked.id, start: pt, position: pt, begun: performance.now() };
       hovered = pt;
-      updateHud(true);
+      canvas.setPointerCapture(event.pointerId);
     } else {
       attemptCopy(pendingSourceId, pt.x, pt.y);
-      updateHud(true);
     }
+    updateHud(true);
     return;
   }
   const unit = findCopyTarget(battle, pt.x, pt.y);
@@ -234,9 +243,9 @@ function drawTerrain(t) {
   ctx.beginPath(); ctx.ellipse(180, 300, 165, 235, 0, 0, Math.PI * 2); ctx.fill();
 
   for (let col = 0; col < 12; col++) {
-    for (let row = 0; row < 19; row++) {
+    for (let row = -1; row < 20; row++) {
       const x = col * 35 + (row % 2) * 16;
-      const y = row * 35 + 9;
+      const y = row * 35 + 9 - (battle.cameraY % 35);
       ctx.strokeStyle = row < 9 ? '#ffc1a20d' : '#9be9fa0a';
       ctx.lineWidth = 1;
       ctx.strokeRect(x, y, 33, 33);
@@ -253,15 +262,15 @@ function drawTerrain(t) {
 
   for (let i = 0; i < 29; i++) {
     const x = (i * 97 + 49) % 351;
-    const y = (i * 127 + 39) % 556 + 20;
+    const y = ((i * 127 + 39 - Math.floor(battle.cameraY * .67)) % 556 + 556) % 556 + 20;
     ctx.fillStyle = i % 3 === 0 ? 'rgba(252,214,167,.14)' : 'rgba(15,29,39,.23)';
     ctx.save();ctx.translate(x, y);ctx.rotate(i * .79);
     ctx.fillRect(-3, -2, 9, 4);ctx.restore();
   }
   ctx.fillStyle = 'rgba(236,122,105,.055)';
-  ctx.fillRect(0, 0, SIZE.width, 130);
+  ctx.fillRect(0, 0, SIZE.width, 100);
   ctx.fillStyle = 'rgba(92,209,234,.055)';
-  ctx.fillRect(0, 480, SIZE.width, 120);
+  ctx.fillRect(0, 510, SIZE.width, 90);
   ctx.strokeStyle = '#ffbaa228';ctx.lineWidth = 2;
   ctx.beginPath();ctx.moveTo(0, 74);ctx.lineTo(SIZE.width, 74);ctx.stroke();
   ctx.strokeStyle = '#aaf5ff26';
@@ -310,7 +319,7 @@ function drawUnit(u, t, ghost = false) {
   const glow = ally ? '#72e8fc' : '#ff8e7d';
 
   ctx.fillStyle = '#07142181';
-  ctx.beginPath();ctx.ellipse(0, r*.7, r*1.04, r*.40, 0, 0, Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(0, r*.7+(u.type==='flier'?10:0), r*1.04, r*.40, 0, 0, Math.PI*2);ctx.fill();
 
   if (u.spawnGlow > 0 || ghost) {
     ctx.globalAlpha = ghost ? .55 : Math.min(.9, u.spawnGlow * .8);
@@ -326,7 +335,7 @@ function drawUnit(u, t, ghost = false) {
     circle(0, 0, r + 8 + energy*18, false);
     ctx.globalAlpha = 1;
   }
-  ctx.translate(0, bob);
+  ctx.translate(0, bob - (u.type==='flier' ? 7 + Math.sin(t*4+u.id)*4 : 0));
   ctx.shadowColor = glow;ctx.shadowBlur = u.flash > 0 ? 26 : ghost ? 18 : 5;
   ctx.fillStyle = ally ? '#479fbf' : '#b95366';
   if (isLarge) {
@@ -343,7 +352,16 @@ function drawUnit(u, t, ghost = false) {
   circle(0, 1, r, false);
 
   // Weapon geometry gives each class its own silhouette and identifiable attack source.
-  if (u.type === 'sword') {
+  if (u.type === 'raider') {
+    ctx.fillStyle = ally ? '#98edff' : '#ffcda2';
+    ctx.beginPath();ctx.moveTo(-r*.83,-r*.6);ctx.lineTo(r*.2,-r*1.2);ctx.lineTo(r*.45,-r*.2);ctx.fill();
+    ctx.strokeStyle='#fff3d0';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(r*.3,r*.3);ctx.lineTo(r*1.5,-r*.5);ctx.stroke();
+  } else if (u.type === 'flier') {
+    ctx.fillStyle = ally ? '#a5f2ff' : '#fbd0f5';
+    ctx.beginPath();ctx.moveTo(-r*.6,0);ctx.lineTo(-r*2.0,-r*.9);ctx.lineTo(-r*1.4,r*.8);ctx.fill();
+    ctx.beginPath();ctx.moveTo(r*.6,0);ctx.lineTo(r*2.0,-r*.9);ctx.lineTo(r*1.4,r*.8);ctx.fill();
+  } else if (u.type === 'sword') {
     ctx.strokeStyle = '#fbf4de';ctx.lineWidth=3;
     ctx.beginPath();ctx.moveTo(r*.25, r*.5);ctx.lineTo(r*.95,-r*.91);ctx.stroke();
     ctx.strokeStyle = ally ? '#96f5ff' : '#ffd08b';ctx.lineWidth=3.5;
@@ -428,9 +446,9 @@ function drawDrag() {
   if (id === null) return;
   const source = battle.units.find(u => u.id === id && !u.dead);
   if (!source) return;
-  const pos = drag?.position ?? hovered ?? { x: 180, y: 410 };
+  const pos = drag?.position ?? hovered ?? { x: 180, y: battle.cameraY + 410 };
   const x = Math.max(15, Math.min(345,pos.x));
-  const y = Math.max(74,Math.min(526,pos.y));
+  const y = Math.max(battle.cameraY+65,Math.min(battle.cameraY + SIZE.height-65,pos.y));
   ctx.save();
   ctx.setLineDash([8,5]);ctx.lineWidth=2.5;ctx.strokeStyle='#b1f7ffb0';
   ctx.beginPath();ctx.moveTo(source.x,source.y);ctx.quadraticCurveTo(source.x+35,(source.y+y)/2,x,y);ctx.stroke();
@@ -442,7 +460,7 @@ function drawDrag() {
   drawUnit({ ...source, x, y, side:'blue', hp:source.maxHp, spawnGlow:1, flash:.1 }, battle.time, true);
   ctx.font='bold 12px -apple-system,sans-serif';ctx.textAlign='center';
   ctx.fillStyle='#e9ffff';ctx.shadowBlur=8;ctx.shadowColor='#16384a';
-  ctx.fillText(TYPES[source.type].label + 'を味方に！',Math.max(65,Math.min(300,x)),Math.max(92,y-source.radius-25));
+  ctx.fillText(TYPES[source.type].label + 'を味方に！',Math.max(65,Math.min(300,x)),Math.max(battle.cameraY+92,y-source.radius-25));
   ctx.restore();
 }
 
@@ -454,11 +472,12 @@ function drawPrompt(t) {
   ctx.save();ctx.globalAlpha=.65+Math.sin(t*3)*.20;
   ctx.strokeStyle='#b2faff';ctx.lineWidth=3;ctx.setLineDash([5,8]);
   ctx.beginPath();ctx.moveTo(source.x+23,source.y+20);
-  ctx.quadraticCurveTo(source.x+82,310,source.x+18,405);ctx.stroke();
+  ctx.quadraticCurveTo(source.x+76,source.y+95,source.x+18,source.y+175);ctx.stroke();
   ctx.setLineDash([]);
-  ctx.beginPath();ctx.moveTo(source.x+11,393);ctx.lineTo(source.x+18,408);ctx.lineTo(source.x+30,396);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(source.x+11,source.y+163);
+  ctx.lineTo(source.x+18,source.y+178);ctx.lineTo(source.x+30,source.y+166);ctx.stroke();
   ctx.fillStyle='#e7ffff';ctx.font='bold 13px -apple-system,sans-serif';ctx.textAlign='center';
-  ctx.fillText('この敵を味方に！',180,330);
+  ctx.fillText('巨兵を味方にしよう',180,source.y+100);
   ctx.restore();
 }
 
@@ -470,8 +489,16 @@ function render(t) {
     shake*=.78;
   }
   drawTerrain(t);
+  ctx.save();
+  ctx.translate(0,-battle.cameraY);
   drawGate(battle.gateRed,'red',t);
   drawGate(battle.gateBlue,'blue',t);
+  for (const gate of battle.gates) {
+    if (gate.index < battle.stage) {
+      ctx.save();ctx.globalAlpha=.24;
+      drawGate(gate,'red',t);ctx.restore();
+    }
+  }
   // Character y-order preserves obvious physical layering.
   const sorted = [...battle.units].sort((a,b)=>a.y-b.y);
   for (const unit of sorted) drawUnit(unit,t);
@@ -479,6 +506,7 @@ function render(t) {
   drawEffects();
   drawPrompt(t);
   drawDrag();
+  ctx.restore();
   ctx.restore();
 }
 

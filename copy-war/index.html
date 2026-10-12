@@ -12,19 +12,20 @@
   <main id="screen">
     <header class="hud">
       <div class="brand"><span class="star">✦</span> COPY<span>WAR</span></div>
-      <div class="time-unit"><span>残り</span><b id="time">100</b><small>秒</small></div>
+      <div class="time-unit"><span>残り</span><b id="time">220</b><small>秒</small></div>
     </header>
     <section class="body">
       <div class="enemy-header">
-        <div class="faction"><span class="red-icon">◆</span> 敵の拠点 <small id="red-count">6体</small></div>
+        <div class="faction"><span class="red-icon">◆</span> <span id="red-label">防衛線 1/3・外郭防衛線</span> <small id="red-count">6体</small></div>
         <div class="hp-wrap"><div class="hp-bar enemy"><div id="enemy-health"></div></div></div>
       </div>
+      <div class="stage-line"><span id="stage-progress"></span></div>
       <div class="arena-wrap" id="arena-wrap">
         <canvas id="game" width="360" height="600" aria-label="敵を掴んで引っ張り、味方としてコピーする戦場"></canvas>
         <div class="battle-toast" id="toast"></div>
       </div>
       <div class="friend-header">
-        <div class="faction"><span class="blue-icon">◆</span> 味方の拠点 <small id="blue-count">4体</small></div>
+        <div class="faction"><span class="blue-icon">◆</span> 味方部隊 <small id="blue-count">4体</small></div>
         <div class="hp-wrap"><div class="hp-bar ally"><div id="ally-health"></div></div></div>
       </div>
       <div class="control">
@@ -44,7 +45,7 @@
         <h1 id="overlay-title">敵をコピーして、<br><em>味方にしろ。</em></h1>
         <p id="overlay-description">強敵ほど、奪えば強い。<br>指で敵を引っ張り、好きな場所に味方を増やそう。</p>
         <button type="button" id="start">バトル開始 <span>→</span></button>
-        <p class="intro-footnote">味方を増やし、上の敵拠点を破壊せよ。</p>
+        <p class="intro-footnote">3つの防衛線を突破して、最終要塞を落とせ。</p>
       </div>
     </div>
   </main>
