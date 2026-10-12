@@ -1,3 +1,4 @@
+import { isBoss } from './bosses.mjs';
 import { WORLD_HEIGHT, CHAPTERS, gateForStage, stagesForChapter } from './progression.mjs';
 /**
  * COPY WAR — enemy-to-ally cloning battle simulator.
@@ -17,6 +18,10 @@ export const TYPES = Object.freeze({
   flier: { label: '飛行兵', color: '#bba3e9', hp: 51, speed: 64, radius: 12, range: 116, damage: 16, interval: 1.4, windup: .17 },
   cannon: { label: '砲兵', color: '#c99869', hp: 96, speed: 27, radius: 16, range: 220, damage: 55, interval: 3.1, windup: .65 },
   summoner: { label: '召喚士', color: '#ac75dd', hp: 76, speed: 31, radius: 15, range: 125, damage: 0, interval: 4.6, windup: .7 },
+  earthlord: {label:'裂地の巨王',color:'#d6a26f',hp:680,speed:20,radius:33,range:65,damage:98,interval:4.1,windup:1.05},
+  thunderbird: {label:'雷翼獣',color:'#af92ff',hp:500,speed:47,radius:28,range:175,damage:35,interval:3.1,windup:.7},
+  fortress: {label:'鉄砲巨城',color:'#e1aa7d',hp:760,speed:19,radius:34,range:205,damage:49,interval:4.1,windup:.95},
+  mirrorlord: {label:'原初の複製王',color:'#d69cf5',hp:880,speed:25,radius:33,range:150,damage:0,interval:5.1,windup:1.05},
 });
 
 /** Seeded RNG ensures simulated comparisons are not dependent on Math.random(). */
@@ -38,6 +43,7 @@ export function createBattle(seed = 19, options = {}) {
     amplifier:Math.max(0,Math.min(5,Math.trunc(options.upgrades?.amplifier ?? 0))),
     vanguard:Math.max(0,Math.min(4,Math.trunc(options.upgrades?.vanguard ?? 0))),
     resonance:Math.max(0,Math.min(3,Math.trunc(options.upgrades?.resonance ?? 0))),
+    dominion:Math.max(0,Math.min(4,Math.trunc(options.upgrades?.dominion ?? 0))),
   };
   const battle = {
     time: 0, timeLimit: 220, result: 'playing', seed, rand: randomGenerator(seed),
@@ -50,6 +56,7 @@ export function createBattle(seed = 19, options = {}) {
     gateRed: null,
     enemyTimer: 12, allyTimer: 8.0, actionCount: 0, synergy: 0,
     secured: [], explored: 0, commandMorale: 100, moraleWarning: false,
+    capturedBosses: [], bossDefeated: [],
   };
   battle.gateRed = battle.gates[0];
   addUnit(battle, 'blue', 'sword', 136, 1945);
@@ -108,18 +115,23 @@ export function copyEnemy(battle, sourceId, x, y) {
   const source = battle.units.find(u => u.id === sourceId && !u.dead && u.side === 'red');
   if (!source) return { ok: false, reason: 'missing' };
   const position = fitDeployment(battle, x, y, source.radius);
+  const bossBoost = isBoss(source.type) ? 1 + battle.upgrades.dominion * .20 : 1;
   const copy = addUnit(battle, 'blue', source.type, position.x, position.y, {
     attackTimer: source.windup > 0 ? 0 : Math.min(source.attackTimer, .18),
     windup: source.windup > 0 ? Math.max(.1, source.windup) : 0,
     copyGeneration: source.copyGeneration + 1,
     sourceId: source.id, facing: -1, spawnGlow: .9,
-    hp:TYPES[source.type].hp*(1+battle.upgrades.amplifier*.12),
-    maxHp:TYPES[source.type].hp*(1+battle.upgrades.amplifier*.12),
-    powerScale:1+battle.upgrades.amplifier*.10,
+    hp:TYPES[source.type].hp*(1+battle.upgrades.amplifier*.12)*bossBoost,
+    maxHp:TYPES[source.type].hp*(1+battle.upgrades.amplifier*.12)*bossBoost,
+    powerScale:(1+battle.upgrades.amplifier*.10)*bossBoost,
   });
   if (!copy) return { ok: false, reason: 'limit' };
   battle.copied++;
   battle.actionCount++;
+  if (isBoss(source.type) && !battle.capturedBosses.includes(source.type)) {
+    battle.capturedBosses.push(source.type);
+    battle.events.push({ kind:'boss-captured', type:source.type });
+  }
   battle.lastClone = { type: copy.type, x: copy.x, y: copy.y, time: battle.time };
   emitRing(battle, copy.x, copy.y, 'copy', 42);
   emitParticles(battle, copy.x, copy.y, 19, '#8cf4ff', 100);
@@ -140,6 +152,11 @@ export function copyEnemy(battle, sourceId, x, y) {
  * Permanent unit strength remains identical to the source's class.
  */
 function triggerArrival(b, copy) {
+  if (isBoss(copy.type)) {
+    // A stolen commander immediately demonstrates the actual power the player won.
+    performBossAttack(b, copy, true);
+    return;
+  }
   if (copy.type === 'guardian' || copy.type === 'titan') {
     slam(b, copy, copy, copy.type === 'titan' ? 86 : 65,
       copy.type === 'titan' ? 132 : 105, false);
@@ -259,7 +276,7 @@ function emitParticles(b, x, y, amount, color, speed = 85) {
 function emitRing(b, x, y, kind, radius) {
   b.effects.push({
     kind: 'ring', x, y, radius, life: .44, totalLife: .44,
-    color: kind === 'copy' ? '#8cf1ff' : kind === 'red' ? '#ffaf82' : '#a9edfa',
+    color: kind === 'copy' ? '#8cf1ff' : kind === 'shield' ? '#f4c17d' : kind === 'red' ? '#ffaf82' : '#a9edfa',
   });
 }
 
@@ -276,6 +293,10 @@ function damageUnit(b, unit, damage, side) {
   emitRing(b, unit.x, unit.y, side, unit.radius * 3);
   emitParticles(b, unit.x, unit.y, 13 + Math.ceil(unit.radius * .6),
     unit.side === 'blue' ? '#8df0ff' : '#ffb280', 165);
+  if (isBoss(unit.type)) {
+    b.bossDefeated.push(unit.type);
+    b.events.push({kind:'boss-down',type:unit.type,side:unit.side});
+  }
   if (unit.type === 'titan') {
     b.events.push({ kind: 'titan-down', side, x: unit.x, y: unit.y });
   }
@@ -285,6 +306,15 @@ function damageUnit(b, unit, damage, side) {
 function damageGate(b, side, damage, x, y) {
   if (b.result !== 'playing' || side === 'red') return;
   const gate = side === 'blue' ? b.gateRed : b.gateBlue;
+  const livingBoss=b.units.some(u=>!u.dead && u.side==='red' && isBoss(u.type));
+  if(livingBoss) {
+    emitRing(b,gate.x,gate.y,'shield',54);
+    if(b.time-(b.lastShieldMessage??-100)>6){
+      b.lastShieldMessage=b.time;
+      b.events.push({kind:'boss-shield'});
+    }
+    return;
+  }
   // No tedious post-battle drilling: an undefended fortress falls rapidly.
   const defendersRemaining = b.units.some(u => u.side === 'red' && !u.dead &&
     Math.abs(u.y - gate.y) < 235);
@@ -321,9 +351,9 @@ function acquireTarget(b, u) {
     const dx = opponent.x - u.x, dy = opponent.y - u.y;
     const d2 = dx * dx + dy * dy;
     // Ground melee never chases a flying unit that it cannot hit.
-    if (opponent.type === 'flier' && ['sword', 'guardian', 'titan', 'raider'].includes(u.type)) continue;
+    if (['flier','thunderbird'].includes(opponent.type) && ['sword', 'guardian', 'titan', 'raider','earthlord','fortress','mirrorlord'].includes(u.type) && u.type!=='fortress') continue;
     // Flyers bypass the front to pressure archers/healers; archers counter flyers.
-    const priority = u.type === 'archer' && opponent.type === 'flier' ? .10
+    const priority = u.type === 'archer' && ['flier','thunderbird'].includes(opponent.type) ? .10
       : u.type === 'flier' && ['healer','archer','mage'].includes(opponent.type) ? .28
       : 1;
     const weighted = d2 * priority;
@@ -377,7 +407,7 @@ function shoot(b, u, target, opts = {}) {
     id: b.nextId++, x: u.x, y: u.y, vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed, side: u.side,
     kind: opts.kind ?? 'arrow', damage: (opts.damage ?? 12) * (opts.alreadyScaled ? 1 : (u.powerScale ?? 1)), splash: opts.splash ?? 0,
-    radius: opts.kind === 'orb' ? 7 : 4, ttl: 2.1, sourceType: u.type,
+    radius: opts.kind === 'shell' ? 10 : opts.kind === 'orb' ? 7 : 4, ttl: 2.1, sourceType: u.type,
   });
   emitParticles(b, u.x, u.y, 3, u.side === 'blue' ? '#bff9ff' : '#ffd19f', 45);
 }
@@ -410,12 +440,59 @@ function slam(b, u, target, damage, radius, damageFortress = true) {
   b.events.push({ kind: 'slam', side: u.side, hits, x, y, power: damage });
 }
 
+/** These skills work identically for the hostile commander and its copied ally. */
+function performBossAttack(b,u,arrival=false){
+  const foes=b.units.filter(e=>!e.dead&&e.side!==u.side&&distance(e,u)<350)
+    .sort((a,c)=>distance(a,u)-distance(c,u));
+  const otherGate=u.side==='blue'?b.gateRed:b.gateBlue;
+  if(u.type==='earthlord'){
+    const epicenter=arrival?u:foes[0]??u;
+    slam(b,u,epicenter,arrival?105:95,arrival?135:130,!arrival);
+    b.events.push({kind:'boss-skill',type:u.type,x:epicenter.x,y:epicenter.y,side:u.side});
+  }else if(u.type==='thunderbird'){
+    // Visible chained lightning strikes multiple independent targets.
+    const hits=foes.slice(0,arrival?5:4);
+    let from={x:u.x,y:u.y};
+    hits.forEach((target,i)=>{
+      damageUnit(b,target,(arrival?40:37)*(1-i*.16)*(u.powerScale??1),u.side);
+      b.effects.push({kind:'arc',x:from.x,y:from.y,tx:target.x,ty:target.y,
+        life:.42,totalLife:.42,color:u.side==='blue'?'#aafaff':'#e2a4ff'});
+      from=target;
+    });
+    if(!hits.length && u.side==='blue' && distance(u,otherGate)<250)
+      damageGate(b,u.side,36*(u.powerScale??1),otherGate.x,otherGate.y);
+    b.events.push({kind:'boss-skill',type:u.type,x:u.x,y:u.y,side:u.side});
+  }else if(u.type==='fortress'){
+    const target=foes[0]??otherGate;
+    for(const angleOffset of [-.24,0,.24])
+      shoot(b,u,target,{damage:arrival?58:47,splash:arrival?76:64,kind:'shell',
+        speed:200,angleOffset});
+    b.events.push({kind:'boss-skill',type:u.type,x:u.x,y:u.y,side:u.side});
+  }else if(u.type==='mirrorlord'){
+    const allowed=foes.filter(e=>!isBoss(e.type));
+    const templates=allowed.sort((a,c)=>TYPES[c.type].hp+TYPES[c.type].damage - TYPES[a.type].hp-TYPES[a.type].damage)
+      .slice(0,arrival?3:2);
+    // If the enemy army lacks templates, the king still contributes a new army.
+    const types=templates.length?templates.map(e=>e.type):['guardian','mage'];
+    for(let i=0;i<types.length;i++){
+      const type=types[i];
+      const unit=addUnit(b,u.side,type,clamp(u.x+(i-(types.length-1)/2)*38,30,330),
+        clamp(u.y+(u.side==='red'?45:-45),70,WORLD_HEIGHT-70),
+        {powerScale:u.powerScale,spawnGlow:1});
+      if(unit){ emitRing(b,unit.x,unit.y,u.side,unit.radius+27); }
+    }
+    b.events.push({kind:'boss-skill',type:u.type,x:u.x,y:u.y,side:u.side});
+  }
+}
+
 /** Execute an attack after its visually telegraphed wind-up ends. */
 function performAttack(b, u) {
   const stats = TYPES[u.type];
   const target = resolveTarget(b, u, u.attackTargetId);
   if (!target) return;
-  if (u.type === 'healer') {
+  if (isBoss(u.type)) {
+    performBossAttack(b,u);
+  } else if (u.type === 'healer') {
     const friend = acquireHealTarget(b, u);
     if (friend) {
       friend.hp = Math.min(friend.maxHp, friend.hp + 28);
@@ -567,7 +644,13 @@ function deployDefenders(b, index) {
   for (const type of stage.defenders) {
     const x = clamp(75 + b.rand() * 210, 25, 335);
     const y = stage.entry + b.rand() * 130;
-    addUnit(b, 'red', type, x, y);
+    const unit=addUnit(b, 'red', type, x, y);
+    if(unit && isBoss(type)) {
+      // Spawn the commander centered, close to the direction of advance.
+      unit.x=180;unit.y=stage.entry+80;
+      unit.attackTimer=1.6;
+      b.events.push({kind:'boss-arrived',type});
+    }
   }
   emitRing(b, 180, stage.entry, 'red', 72);
 }

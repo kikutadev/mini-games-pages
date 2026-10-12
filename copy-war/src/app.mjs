@@ -1,3 +1,4 @@
+import { BOSSES, isBoss } from './bosses.mjs';
 import { STAGES, CHAPTERS } from './progression.mjs';
 import { SAVE_KEY, UPGRADES, newProgress, sanitizeProgress, buyUpgrade,
   upgradeCost, settleExpedition } from './meta.mjs';
@@ -30,6 +31,10 @@ const ROLE_HINTS = Object.freeze({
   flier:'飛行しながら後衛を攻撃',
   cannon:'着地直後に砲撃、密集した敵を撃破',
   summoner:'倒されるまで新しい兵士を召喚',
+  earthlord:'大地を割り敵陣を吹き飛ばす',
+  thunderbird:'連鎖雷撃で空から複数の敵を焼く',
+  fortress:'三連の爆裂砲で戦線を崩す',
+  mirrorlord:'敵の能力を自動で複製し、軍勢を増殖',
 });
 
 function readProgress(){
@@ -113,10 +118,12 @@ function renderMeta(){
     button.textContent=(unlocked ? progress.completed.includes(i)?'✓':'◆' : '🔒')
       +' 第'+(i+1)+'章 '+CHAPTERS[i].name;
   });
+  document.querySelector('#boss-dna').textContent='獲得したボス因子 '+progress.bossDNA.length+'/4';
   upgradeList.replaceChildren();
   for(const spec of UPGRADES){
     const rank=progress.levels[spec.id];
     const cost=upgradeCost(spec,rank);
+    const needsDNA=spec.id==='dominion' && rank>=progress.bossDNA.length;
     const card=document.createElement('div');
     card.className='upgrade-card';
     const info=document.createElement('div');
@@ -128,8 +135,8 @@ function renderMeta(){
     info.append(title,description);
     const action=document.createElement('button');
     action.type='button';
-    action.textContent=cost===null?'MAX':'◆ '+cost;
-    action.disabled=cost===null||progress.crystals<cost;
+    action.textContent=cost===null?'MAX':needsDNA?'DNA不足':'◆ '+cost;
+    action.disabled=cost===null||progress.crystals<cost||needsDNA;
     action.dataset.upgrade=spec.id;
     card.append(info,action);
     upgradeList.append(card);
@@ -196,6 +203,7 @@ function finish() {
   document.querySelector('#overlay-description').innerHTML =
     '突破 ' + battle.secured.length + '/3　／　コピー ' + battle.copied + '体<br>' +
     '◆ 結晶 +'+settlement.reward+' 獲得'+
+    (settlement.newBosses.length ? '　ボス因子 '+settlement.newBosses.length+'個獲得！' : '')+
     (won && battle.chapter<CHAPTERS.length-1 ? '　次の章が解放！' : '');
   button.innerHTML = '選んだ章へ出撃 <span>→</span>';
   renderMeta();
@@ -210,12 +218,20 @@ function updateHud(force = false) {
   uiTime = stamp;
   timeText.textContent = Math.max(0, Math.ceil(battle.timeLimit - battle.time));
   const globalStage=battle.chapter*3+battle.stage;
-  document.querySelector('#red-label').textContent = `${globalStage+1}/${STAGES.length}・${STAGES[globalStage].name}`;
+  const boss=battle.units.find(u=>u.side==='red'&&!u.dead&&isBoss(u.type));
+  const bossVisible=!!boss && boss.y>battle.cameraY+15 && boss.y<battle.cameraY+SIZE.height-25;
+  const headline=document.querySelector('#red-label');
+  headline.classList.toggle('boss-heading',bossVisible);
+  headline.textContent=bossVisible
+    ? (globalStage+1)+'/'+STAGES.length+' ★ BOSS '+BOSSES[boss.type].label
+    : (globalStage+1)+'/'+STAGES.length+'・'+STAGES[globalStage].name;
+  document.querySelector('.hp-bar.enemy').classList.toggle('boss-hp',bossVisible);
   document.querySelector('#stage-progress').style.width = `${((battle.chapter*3+battle.secured.length) / STAGES.length) * 100}%`;
   const alliedUnits = battle.units.filter(u => u.side === 'blue').length;
   allyHealth.style.width = battle.commandMorale + '%';
   allyHealth.classList.toggle('low', battle.commandMorale < 30);
-  enemyHealth.style.width = Math.max(0, battle.gateRed.hp / battle.gateRed.maxHp * 100) + '%';
+  const targetHealth=bossVisible ? boss : battle.gateRed;
+  enemyHealth.style.width = Math.max(0,targetHealth.hp / targetHealth.maxHp * 100) + '%';
   blueCount.textContent = alliedUnits + '体';
   redCount.textContent = battle.units.filter(u => u.side === 'red').length + '体';
 
@@ -239,6 +255,18 @@ function handleEvents() {
     if (event.kind === 'clone') {
       beep(event.type === 'titan' ? 160 : 460, .21, .06, 'triangle', 2.25);
       notify(TYPES[event.type].label + 'が味方になった！', 1.0);
+    } else if (event.kind === 'boss-arrived') {
+      notify('★ '+BOSSES[event.type].label+' の力を奪え！',1.8);
+      beep(100,.55,.09,'sawtooth',.68);
+    } else if (event.kind === 'boss-captured') {
+      notify('ボスの力を奪取！リザルトでDNA獲得',1.9);
+      beep(280,.35,.10,'triangle',2.1);
+    } else if (event.kind === 'boss-down') {
+      shake=6;
+      beep(90,.48,.10,'sawtooth',.45);
+    } else if (event.kind === 'boss-skill') {
+      shake=Math.max(shake,event.type==='earthlord'?4.5:1.9);
+      beep(event.type==='thunderbird'?920:125,.24,.062,'sawtooth',1.35);
     } else if (event.kind === 'resonance') {
       notify('共鳴衝撃！コピーがさらに強くなる',1.4);
       beep(300,.3,.075,'triangle',2.1);
@@ -258,7 +286,7 @@ function handleEvents() {
       notify('巨神出現！ このボスもコピーできる', 3.2);
       beep(115, .5, .1, 'sawtooth', 1.5);
     } else if (event.kind === 'checkpoint') {
-      notify(`突破！ 次は ${event.label}`, 3.3);
+      notify('突破！ 次は '+event.label, 1.4);
       beep(460, .52, .08, 'triangle', 2.1);
     } else if (event.kind === 'wave' && event.wave > 3) {
       notify('敵の援軍が到着！', 1.3);
@@ -432,7 +460,8 @@ function drawUnit(u, t, ghost = false) {
   const ally = u.side === 'blue';
   const stats = TYPES[u.type];
   const r = u.radius;
-  const isLarge = ['guardian','titan'].includes(u.type);
+  const commander=isBoss(u.type);
+  const isLarge = ['guardian','titan'].includes(u.type)||commander;
   ctx.save();ctx.translate(u.x, u.y);
   const bob = u.windup > 0 ? -2 : Math.sin(u.step * 2.3) * (isLarge ? 1.1 : 1.8);
   const energy = u.windup > 0 ? 1 - Math.max(0, u.windup) / stats.windup : 0;
@@ -456,9 +485,14 @@ function drawUnit(u, t, ghost = false) {
     ctx.globalAlpha = 1;
   }
   ctx.translate(0, bob - (u.type==='flier' ? 7 + Math.sin(t*4+u.id)*4 : 0));
-  ctx.shadowColor = glow;ctx.shadowBlur = u.flash > 0 ? 26 : ghost ? 18 : 5;
+  ctx.shadowColor = glow;ctx.shadowBlur = u.flash > 0 ? 26 : ghost ? 18 : commander?13:5;
   ctx.fillStyle = ally ? '#479fbf' : '#b95366';
-  if (isLarge) {
+  if (u.type==='thunderbird') {
+    ctx.fillStyle=ally?'#78cdec':'#aa88db';
+    ctx.beginPath();ctx.moveTo(0,-r*.7);ctx.lineTo(-r*1.95,-r*1.45);ctx.lineTo(-r*1.1,r*.6);
+    ctx.lineTo(0,r*.7);ctx.lineTo(r*1.1,r*.6);ctx.lineTo(r*1.95,-r*1.45);ctx.closePath();ctx.fill();
+    circle(0,0,r*.76);
+  } else if (isLarge) {
     ctx.beginPath();
     ctx.moveTo(-r*.88,-r*.38);ctx.lineTo(-r*1.2,-r*.78);
     ctx.lineTo(-r*.33,-r*.82);ctx.lineTo(r*.33,-r*.82);
@@ -473,7 +507,24 @@ function drawUnit(u, t, ghost = false) {
   circle(0, 1, r, false);
 
   // Weapon geometry gives each class its own silhouette and identifiable attack source.
-  if (u.type === 'raider') {
+  if (u.type==='earthlord') {
+    ctx.fillStyle='#eac188';
+    for(const dir of [-1,1]) {
+      ctx.beginPath();ctx.moveTo(dir*r*.47,-r*.48);ctx.lineTo(dir*r*.92,-r*1.33);
+      ctx.lineTo(dir*r*1.17,-r*.38);ctx.fill();
+    }
+  } else if (u.type==='thunderbird') {
+    ctx.strokeStyle='#e8efff';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(-r*.25,-r*.85);ctx.lineTo(r*.13,-r*.35);
+    ctx.lineTo(-r*.1,-r*.28);ctx.lineTo(r*.28,r*.42);ctx.stroke();
+  } else if(u.type==='fortress') {
+    ctx.fillStyle='#d1a476';
+    for(let a=-1;a<=1;a++)ctx.fillRect(a*r*.57-r*.2,-r*1.52,r*.43,r*1.2);
+  } else if(u.type==='mirrorlord') {
+    ctx.strokeStyle='#ecccff';ctx.lineWidth=3;
+    circle(0,-r*.55,r*.45,false);circle(0,-r*.55,r*.21,false);
+    ctx.fillStyle='#e3b3fa';ctx.fillRect(-r*.13,-r*.9,r*.26,r*.6);
+  } else if (u.type === 'raider') {
     ctx.fillStyle = ally ? '#98edff' : '#ffcda2';
     ctx.beginPath();ctx.moveTo(-r*.83,-r*.6);ctx.lineTo(r*.2,-r*1.2);ctx.lineTo(r*.45,-r*.2);ctx.fill();
     ctx.strokeStyle='#fff3d0';ctx.lineWidth=3;
@@ -527,6 +578,14 @@ function drawUnit(u, t, ghost = false) {
   circle(-r*.28,-r*.12,isLarge?1.5:1.1);
   circle(r*.32,-r*.12,isLarge?1.5:1.1);
 
+  if(commander) {
+    ctx.strokeStyle=u.side==='blue'?'#94f6ff':'#ffcf8f';
+    ctx.lineWidth=2.5;ctx.shadowBlur=12;ctx.shadowColor=ctx.strokeStyle;
+    circle(0,0,r+7,false);ctx.shadowBlur=0;
+    ctx.fillStyle=u.side==='blue'?'#c5ffff':'#ffe6b0';
+    ctx.font='900 10px -apple-system,sans-serif';ctx.textAlign='center';
+    ctx.fillText(u.side==='blue'?'✦':'BOSS',0,-r-22);
+  }
   if (u.hp < u.maxHp || isLarge) {
     const width = r*2.1;
     ctx.fillStyle = '#142631ce';ctx.fillRect(-width/2,-r-12,width,4);
@@ -542,11 +601,11 @@ function drawProjectile(p) {
   ctx.save();ctx.translate(p.x, p.y);ctx.rotate(angle);
   ctx.shadowBlur = 13;ctx.shadowColor = p.side === 'blue' ? '#8aeeff' : '#ffaf78';
   ctx.strokeStyle = p.side === 'blue' ? '#b5faff' : '#ffcf95';
-  ctx.lineWidth = p.kind === 'orb' ? 7 : 2.8;
+  ctx.lineWidth = ['orb','shell'].includes(p.kind) ? 8 : 2.8;
   ctx.lineCap = 'round';
   ctx.beginPath();ctx.moveTo(-17,0);ctx.lineTo(4,0);ctx.stroke();
   ctx.fillStyle = p.kind === 'orb' ? '#ebd4fa' : p.side === 'blue' ? '#efffff' : '#ffe4b2';
-  if (p.kind === 'orb') circle(0,0,6);else {
+  if (['orb','shell'].includes(p.kind)) circle(0,0,p.kind==='shell'?9:6);else {
     ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-3,-4);ctx.lineTo(-3,4);ctx.fill();
   }
   ctx.restore();
@@ -556,7 +615,17 @@ function drawProjectile(p) {
 function drawEffects() {
   for (const e of battle.effects) {
     const alpha = Math.min(1,e.life/e.totalLife);
-    if (e.kind === 'ring') {
+    if (e.kind === 'arc') {
+      ctx.save();ctx.globalAlpha=alpha;ctx.shadowBlur=15;ctx.shadowColor=e.color;
+      ctx.strokeStyle=e.color;ctx.lineWidth=2+3*alpha;
+      ctx.beginPath();ctx.moveTo(e.x,e.y);
+      for(let i=1;i<7;i++){
+        const f=i/7;
+        const jitter=Math.sin(i*17+e.x*.09+e.ty*.07)*12*alpha;
+        ctx.lineTo(e.x+(e.tx-e.x)*f+jitter,e.y+(e.ty-e.y)*f-jitter);
+      }
+      ctx.lineTo(e.tx,e.ty);ctx.stroke();ctx.restore();
+    } else if (e.kind === 'ring') {
       ctx.globalAlpha = alpha*.85;ctx.lineWidth = 3*(1-alpha)+.8;
       ctx.strokeStyle=e.color;
       circle(e.x,e.y, e.radius*(1-alpha), false);

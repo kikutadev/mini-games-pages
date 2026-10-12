@@ -26,28 +26,28 @@ export const STAGES = Object.freeze([
     [['sword','archer','sword'],['guardian','archer','sword']],0,'frontier'),
   stage('魔導砲陣地','飛行兵と突撃兵',670,['raider','flier','archer','mage','guardian','healer'],
     [['raider','flier','archer','sword'],['raider','mage','flier','guardian']],1,'frontier'),
-  stage('巨神の門','巨神を奪い突破',1100,['titan','guardian','flier','raider','mage','healer','archer'],
+  stage('地裂の門','裂地の巨王を奪い突破',1100,['earthlord','guardian','flier','raider','mage','healer','archer'],
     [['guardian','flier','mage','raider','sword'],['titan','raider','flier','healer']],2,'frontier'),
 
   stage('射手の砦','三連射で翼を射抜け',560,['archer','archer','flier','flier','guardian','healer'],
     [['flier','flier','archer'],['guardian','flier','mage']],3,'sky'),
   stage('翼の回廊','空を奪い制空権を取る',730,['flier','flier','flier','mage','raider','archer','healer'],
     [['flier','flier','mage','archer'],['flier','raider','flier','healer']],4,'sky'),
-  stage('雷雲要塞','巨神と飛行大軍',1160,['titan','flier','flier','flier','mage','healer','guardian'],
+  stage('雷雲要塞','雷翼獣と飛行軍団',1160,['thunderbird','flier','flier','flier','mage','healer','guardian'],
     [['titan','flier','archer'],['flier','flier','guardian','healer']],5,'sky'),
 
   stage('突進製造区','突撃兵で敵陣を崩せ',620,['raider','raider','guardian','healer','mage','archer'],
     [['raider','raider','sword'],['guardian','raider','healer']],6,'factory'),
   stage('修復プラント','回復と砲撃を利用',780,['healer','healer','cannon','guardian','sword','flier','mage'],
     [['healer','guardian','cannon'],['raider','flier','healer']],7,'factory'),
-  stage('超重装工廠','大砲と巨神の火力',1280,['cannon','cannon','titan','guardian','raider','healer','flier'],
+  stage('超重装工廠','大砲と巨神の火力',1280,['fortress','cannon','titan','guardian','raider','healer','flier'],
     [['cannon','guardian','raider'],['titan','cannon','healer']],8,'factory'),
 
   stage('影の回廊','飛行・突進の挟み撃ち',700,['raider','raider','flier','flier','mage','healer','archer'],
     [['raider','flier','mage','archer'],['raider','flier','guardian','healer']],9,'abyss'),
   stage('複製阻止陣','召喚士の無限増援',970,['summoner','summoner','cannon','flier','guardian','healer','mage'],
     [['summoner','flier','guardian'],['cannon','raider','mage','healer']],10,'abyss'),
-  stage('原初の王座','すべてをコピーして制圧',1640,['titan','titan','summoner','cannon','flier','raider','guardian','healer','mage'],
+  stage('原初の王座','すべてをコピーして制圧',1640,['mirrorlord','titan','summoner','cannon','flier','raider','guardian','healer','mage'],
     [['titan','cannon','summoner','flier'],['guardian','raider','healer','flier']],11,'abyss'),
 ]);
 
