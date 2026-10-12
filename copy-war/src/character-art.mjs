@@ -9,8 +9,8 @@ const BODY={
   red:{base:'#cb657b',light:'#ffd8ae',dark:'#793e65',edge:'#ffd3b5',gear:'#ffe4a0'},
 };
 const bossGold='#ffe5a5';
-const BOSS=new Set(['earthlord','thunderbird','fortress','mirrorlord']);
-const heavy=new Set(['guardian','titan','earthlord','fortress','mirrorlord']);
+const BOSS=new Set(['earthlord','thunderbird','fortress','mirrorlord','frostqueen','hivequeen','cometlord','eclipseking']);
+const heavy=new Set(['guardian','titan','earthlord','fortress','mirrorlord','frostqueen','hivequeen','cometlord','eclipseking']);
 const flyers=new Set(['flier','thunderbird']);
 
 function shape(ctx, points, fill, stroke, width=.07) {
@@ -185,6 +185,46 @@ function gear(ctx,u,c,t,charge,attack){
         ellipse(ctx,dir*1.33,-.37,.12,.19,c.gear);
       }
       break;
+    case 'frostqueen':
+      for(const dir of [-1,1]) {
+        shape(ctx,[[dir*.42,-.84],[dir*.71,-1.9],[dir*.94,-.86],
+          [dir*1.48,-1.17],[dir*1.02,-.14]],'#b8efff','#f3ffff',.075);
+      }
+      shape(ctx,[[-.40,-1.04],[0,-2.07],[.4,-1.04]],'#edfbff','#9fdbf5',.07);
+      ellipse(ctx,0,-1.38,.17,.28,'#82b8e5','#ffffff',.08);
+      break;
+    case 'hivequeen':
+      for(const dir of [-1,1]) {
+        shape(ctx,[[dir*.48,-.34],[dir*1.30,-1.42],[dir*1.88,-.88],
+          [dir*1.35,.43],[dir*.85,.31]],'#b9dfa0','#fff2bf',.055);
+        line(ctx,[[dir*.58,-.83],[dir*.89,-1.96]],'#fff0a1',.13);
+        ellipse(ctx,dir*.92,-1.98,.16,.18,'#ffe6a3');
+      }
+      shape(ctx,[[-.55,.42],[-.88,1.18],[0,.91],[.86,1.18],[.54,.42]],'#7b9e70','#d1f0b3',.07);
+      break;
+    case 'cometlord':
+      for(const dir of [-1,1]){
+        shape(ctx,[[dir*.45,-.81],[dir*1.00,-1.75],[dir*1.36,-1.35],
+          [dir*.95,-.30]],'#ffc58b','#fff4ca',.08);
+      }
+      ellipse(ctx,0,-1.56,.42,.45,'#f8b876','#fff0bd',.07);
+      ctx.save();ctx.rotate(t*.9);
+      for(let i=0;i<4;i++){
+        const ang=i*TAU/4;
+        ellipse(ctx,Math.cos(ang)*1.64,Math.sin(ang)*1.16,.22,.16,'#ffd5a1');
+      }
+      ctx.restore();
+      break;
+    case 'eclipseking':
+      shape(ctx,[[-1.10,-.69],[-.66,-1.74],[0,-1.42],[.68,-1.74],[1.10,-.69]],
+        '#674885','#f5b8ff',.075);
+      ellipse(ctx,0,-1.39,.37,.42,'#201832','#e5b8fa',.09);
+      ellipse(ctx,0,-1.39,.20,.25,'#efcffb','#f9eaff',.07);
+      for(const dir of [-1,1]){
+        shape(ctx,[[dir*.72,-.57],[dir*1.56,-1.2],[dir*1.38,.26],[dir*.98,.56]],
+          '#9165b8','#f7d1fc',.07);
+      }
+      break;
   }
 }
 function body(ctx,u,c,t,charge,attack){
@@ -223,7 +263,7 @@ function body(ctx,u,c,t,charge,attack){
   }
 }
 
-export function drawCharacter(ctx,u,t,ghost=false) {
+function drawCharacterVector(ctx,u,t,ghost=false) {
   const c=BODY[u.side==='blue'?'blue':'red'];
   const r=u.radius;
   const boss=BOSS.has(u.type);
@@ -300,6 +340,23 @@ export function drawCharacter(ctx,u,t,ghost=false) {
       for(const x of [-.53,0,.53]) {
         ellipse(ctx,x,-1.9,.12,.12,'#fff4b7');
       }
+    } else if(u.type==='frostqueen'){
+      for(let k=0;k<6;k++){
+        const angle=k*TAU/6+t*.12;
+        ellipse(ctx,Math.cos(angle)*1.72,Math.sin(angle)*.95,.13,.23,'#d8f9ff');
+      }
+    } else if(u.type==='hivequeen'){
+      for(let k=0;k<5;k++){
+        const angle=k*TAU/5+t*.8;
+        ellipse(ctx,Math.cos(angle)*1.72,Math.sin(angle)*1.12,.12,.18,'#e5f6b2');
+      }
+    } else if(u.type==='cometlord'){
+      for(let k=0;k<4;k++){
+        const angle=k*TAU/4+t*.4;
+        ellipse(ctx,Math.cos(angle)*1.6,Math.sin(angle)*1.2,.13,.16,'#ffeac3');
+      }
+    } else if(u.type==='eclipseking'){
+      ellipse(ctx,0,0,1.75,.83,'#2614353a','#efc9ff',.06);
     } else if(u.type==='mirrorlord'){
       for(let k=0;k<4;k++){
         const angle=k*TAU/4-t*.8;
@@ -335,4 +392,39 @@ export function drawCharacter(ctx,u,t,ghost=false) {
     ctx.font='900 9px -apple-system, sans-serif';
     ctx.textAlign='center';ctx.fillText(u.side==='blue'?'★':'BOSS',u.x,u.y-bob-r*2.42);
   }
+}
+
+// Ordinary troop poses are cached at eight distinct walking/wing frames.
+// Dense 40-vs-40 battles stay detailed without re-tracing every face and weapon
+// every requestAnimationFrame. Bosses, attacks, casts, damage and fresh copies
+// deliberately remain fully animated vectors.
+const troopSprites=new Map();
+const POSES=8;
+function walkingSprite(u,phase) {
+  const key=u.type+':'+u.side+':'+u.radius+':'+phase;
+  let sprite=troopSprites.get(key);
+  if(sprite)return sprite;
+  const size=Math.ceil(u.radius*6+22);
+  const canvas=document.createElement('canvas');
+  canvas.width=size;canvas.height=size;
+  const c=canvas.getContext('2d');
+  const t=phase/POSES*TAU/2;
+  drawCharacterVector(c,{...u,x:size/2,y:size/2,id:1,step:phase/POSES*TAU/2.25,
+    spawnGlow:0,flash:0,hurtPulse:0,attackPulse:0,windup:0,
+    hp:u.maxHp},t,false);
+  sprite={canvas,half:size/2};
+  troopSprites.set(key,sprite);
+  return sprite;
+}
+export function drawCharacter(ctx,u,t,ghost=false) {
+  if(!ghost&&!BOSS.has(u.type)&&u.spawnGlow<=0&&u.flash<=0&&
+      (u.hurtPulse??0)<=0&&(u.attackPulse??0)<=0&&u.windup<=0&&
+      u.hp>=u.maxHp && u.side) {
+    const period=u.type==='flier'?t*11:u.step*2.25;
+    const phase=((Math.floor(period/TAU*POSES)%POSES)+POSES)%POSES;
+    const sprite=walkingSprite(u,phase);
+    ctx.drawImage(sprite.canvas,u.x-sprite.half,u.y-sprite.half);
+    return;
+  }
+  drawCharacterVector(ctx,u,t,ghost);
 }

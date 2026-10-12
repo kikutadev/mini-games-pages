@@ -8,6 +8,10 @@ const palettes=[
   {sky:['#283e65','#317087','#214b71'],edge:'#6e9dc9',stone:'#a6c8d9',accent:'#dbcbf6',dust:'#bfedff'},
   {sky:['#4c3947','#4a474c','#35414c'],edge:'#a99082',stone:'#a5a8a2',accent:'#ffbd7e',dust:'#ffd2a5'},
   {sky:['#352949','#37345d','#223d60'],edge:'#987dbd',stone:'#b8a0c6',accent:'#e9aef1',dust:'#d8baff'},
+  {sky:['#26405c','#335e70','#274f6e'],edge:'#a1dfed',stone:'#c1f3ff',accent:'#e2faff',dust:'#aef0ff'},
+  {sky:['#364d39','#3f5842','#324a41'],edge:'#a5c39a',stone:'#a6d4a4',accent:'#d6ec90',dust:'#d7ffc6'},
+  {sky:['#603f4a','#6c4b52','#384a6a'],edge:'#de9b85',stone:'#e2b69e',accent:'#ffdda3',dust:'#fcb38a'},
+  {sky:['#241a3f','#392651','#30265b'],edge:'#bb8fdb',stone:'#d1aae8',accent:'#f4c4fc',dust:'#f8dbff'},
 ];
 const mod=(x,n)=>((x%n)+n)%n;
 function disc(ctx,x,y,rx,ry,color){
@@ -22,7 +26,7 @@ function contour(ctx,pts,color,w=1){
 function terrainDecor(ctx,chapter,x,y,i,t,p) {
   ctx.save();ctx.translate(x,y);
   const f= Math.sin(i*6.1)*3;
-  if(chapter===0){
+  if(chapter===0 || chapter===4){
     // Mossy broken flagstones, polished crystal clusters and leaves.
     ctx.strokeStyle='#6f9e9140';ctx.lineWidth=1.6;
     ctx.strokeRect(-16,-9,31,18);
@@ -31,13 +35,13 @@ function terrainDecor(ctx,chapter,x,y,i,t,p) {
       ctx.save();ctx.translate((k-1)*13,5+(k%2)*5);ctx.rotate(k*.46+Math.sin(t*1.5+i)*.05);
       disc(ctx,0,0,4,2.2,'#b2c69b65');ctx.restore();
     }
-  }else if(chapter===1){
+  }else if(chapter===1 || chapter===5){
     // The shadows and swirls read as floating sky islands beneath the battle.
     disc(ctx,3,0,17,6,'#89d4ed19');
     for(let j=0;j<3;j++)disc(ctx,(j-1)*11,Math.sin(t*.7+i)*2+(j%2)*-3,12,5,'#d2eaff22');
     ctx.strokeStyle='#c6eafa2e';ctx.lineWidth=1.3;
     ctx.beginPath();ctx.arc(1,2,12,-Math.PI*.65,Math.PI*.16);ctx.stroke();
-  }else if(chapter===2){
+  }else if(chapter===2 || chapter===6){
     // Machinery plate seams and rivets, never mistaken for collidable obstacles.
     ctx.fillStyle='#162d3845';ctx.fillRect(-18,-10,36,23);
     ctx.strokeStyle='#e0b28b36';ctx.lineWidth=1.7;ctx.strokeRect(-16,-8,32,19);
@@ -108,13 +112,13 @@ export function drawBattlefield(ctx,b,t){
   }
   // Environmental motion is independent of the combat rules: air, sparks and arcane dust.
   for(let i=0;i<19;i++){
-    const phase=t*(b.chapter===1?9:b.chapter===2?-13:6)+i*65.31;
+    const phase=t*((b.chapter%4)===1?9:(b.chapter%4)===2?-13:6)+i*65.31;
     const x=mod(i*67.3+Math.sin(t*.47+i)*16,350)+5;
     const y=mod(i*127.7 + b.cameraY*.24 + phase,640)-20;
     const radius=i%4===0?1.7:.85;
     ctx.globalAlpha=.12+Math.sin(t*1.9+i)*.08;
     ctx.fillStyle=p.dust;
-    disc(ctx,x,y,radius,radius*(b.chapter===1?.68:1),p.dust);
+    disc(ctx,x,y,radius,radius*((b.chapter%4)===1?.68:1),p.dust);
   }
   ctx.globalAlpha=1;
   // Actual progress marker line approaches as the defensive gate enters view.

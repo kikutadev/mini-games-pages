@@ -37,6 +37,10 @@ const ROLE_HINTS = Object.freeze({
   thunderbird:'連鎖雷撃で空から複数の敵を焼く',
   fortress:'三連の爆裂砲で戦線を崩す',
   mirrorlord:'敵の能力を自動で複製し、軍勢を増殖',
+  frostqueen:'氷の衝撃波で敵集団を凍結',
+  hivequeen:'敵を上回る速度で兵士を大量孵化',
+  cometlord:'複数の敵陣に流星を連続投下',
+  eclipseking:'敵軍を吸い寄せ巨大爆発で制圧',
 });
 
 function readProgress(){
@@ -61,7 +65,14 @@ let shake = 0;
 let slowFrames = 0;
 const landing=document.querySelector('#landing');
 const workshop=document.querySelector('#workshop');
-const chapterButtons=[...document.querySelectorAll('[data-chapter]')];
+const chapterContainer=document.querySelector('#chapters');
+for(let i=0;i<CHAPTERS.length;i++){
+  const chapterButton=document.createElement('button');
+  chapterButton.type='button';
+  chapterButton.dataset.chapter=i;
+  chapterContainer.append(chapterButton);
+}
+const chapterButtons=[...chapterContainer.querySelectorAll('[data-chapter]')];
 const workshopButton=document.querySelector('#show-upgrades');
 const upgradeList=document.querySelector('#upgrade-list');
 
@@ -120,7 +131,7 @@ function renderMeta(){
     button.textContent=(unlocked ? progress.completed.includes(i)?'✓':'◆' : '🔒')
       +' 第'+(i+1)+'章 '+CHAPTERS[i].name;
   });
-  document.querySelector('#boss-dna').textContent='獲得したボス因子 '+progress.bossDNA.length+'/4';
+  document.querySelector('#boss-dna').textContent='獲得したボス因子 '+progress.bossDNA.length+'/'+CHAPTERS.length;
   upgradeList.replaceChildren();
   for(const spec of UPGRADES){
     const rank=progress.levels[spec.id];
@@ -184,7 +195,7 @@ function start() {
   lastTime = performance.now();
   uiTime = -1;
   updateHud(true);
-  notify('巨兵を掴んで下へドラッグ！味方が増える', 3.5);
+  notify(battle.chapter===0?'巨兵を掴んでコピーしよう！':'敵の軍勢をコピーして突破！',2.4);
   beep(350, .12, .06, 'triangle', 1.6);
 }
 
@@ -199,7 +210,7 @@ function finish() {
   saveProgress();
   document.querySelector('#overlay-title').innerHTML = won
     ? battle.chapter===CHAPTERS.length-1
-      ? '全12ステージ<br><em>完全制覇！</em>'
+      ? '全'+STAGES.length+'ステージ<br><em>完全制覇！</em>'
       : '第'+(battle.chapter+1)+'章<br><em>突破！</em>'
     : '進軍失敗…<br><em>再挑戦しよう。</em>';
   document.querySelector('#overlay-description').innerHTML =
@@ -267,7 +278,7 @@ function handleEvents() {
       shake=6;
       beep(90,.48,.10,'sawtooth',.45);
     } else if (event.kind === 'boss-skill') {
-      shake=Math.max(shake,event.type==='earthlord'?4.5:1.9);
+      shake=Math.max(shake,['earthlord','cometlord','eclipseking'].includes(event.type)?4.5:1.9);
       beep(event.type==='thunderbird'?920:125,.24,.062,'sawtooth',1.35);
     } else if (event.kind === 'resonance') {
       notify('共鳴衝撃！コピーがさらに強くなる',1.4);
@@ -356,7 +367,7 @@ canvas.addEventListener('pointerup', event => {
   const source = drag.unitId;
   const moved = Math.hypot(pt.x - drag.start.x, pt.y - drag.start.y);
   drag = null;
-  if (moved >= 24) attemptCopy(source, pt.x, pt.y);
+  if (moved >= 12) attemptCopy(source, pt.x, pt.y);
   else {
     pendingSourceId = source;
     notify('置きたい場所をタップすると味方になる', 2.4);
@@ -593,7 +604,10 @@ function render(t) {
     }
   }
   // Character y-order preserves obvious physical layering.
-  const sorted = [...battle.units].sort((a,b)=>a.y-b.y);
+  // Units in other sectors still simulate; cull them only from expensive vector art.
+  const sorted=battle.units
+    .filter(u=>u.y>battle.cameraY-86 && u.y<battle.cameraY+SIZE.height+88)
+    .sort((a,b)=>a.y-b.y);
   for (const unit of sorted) drawUnit(unit,t);
   for (const projectile of battle.projectiles) drawProjectile(projectile,t);
   drawEffects();

@@ -104,3 +104,8 @@ button:focus-visible{outline:3px solid #a8f6ff;outline-offset:3px}
 #intro-squad{display:block;width:min(100%,300px);height:auto;max-height:92px;object-fit:contain}
 .intro-graphic{min-height:74px;height:85px;align-items:center}
 @media (max-height:740px){.intro-graphic{display:none}}
+
+/* Eight chapters remain directly selectable without pushing the sortie CTA away. */
+.chapter-selector{max-height:214px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:3px;align-content:start;gap:6px}
+.chapter-selector button{height:44px;font-size:10px}
+@media(max-height:740px){.chapter-selector{max-height:137px}.chapter-selector button{height:44px}}

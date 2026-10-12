@@ -6,7 +6,7 @@ export const UPGRADES=Object.freeze([
   Object.freeze({id:'amplifier',name:'コピー増幅',detail:'味方コピーのHP＋12%・攻撃力＋10%／Lv',max:5,base:8,growth:7}),
   Object.freeze({id:'vanguard',name:'開戦援軍',detail:'初期部隊に新たな仲間を追加／Lv',max:4,base:12,growth:10}),
   Object.freeze({id:'resonance',name:'共鳴衝撃',detail:'数体コピーするたび、追加の衝撃波／Lv',max:3,base:16,growth:15}),
-  Object.freeze({id:'dominion',name:'ボス因子',detail:'コピーしたボスのHP・攻撃力+20%／Lv。捕獲DNAで解放',max:4,base:28,growth:22}),
+  Object.freeze({id:'dominion',name:'ボス因子',detail:'コピーしたボスのHP・攻撃力+20%／Lv。捕獲DNAで解放',max:8,base:28,growth:22}),
 ]);
 export function newProgress() {
   return {crystals:0,unlockedChapter:0,selectedChapter:0,completed:[],
