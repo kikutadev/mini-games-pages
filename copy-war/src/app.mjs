@@ -1,479 +1,507 @@
 import {
-  WORLD, createGame, updateGame, copyRegion, copyEntity,
-  pasteRegion, pickEntity, cancelCopy,
+  SIZE, TYPES, createBattle, updateBattle, findCopyTarget, copyEnemy,
 } from './core.mjs';
 
-const canvas = document.getElementById('arena');
-const context = canvas.getContext('2d', { alpha: false });
-const arena = document.getElementById('arena-shell');
-const screen = document.getElementById('screen');
-const topTime = document.getElementById('time');
-const score = document.getElementById('score');
-const health = document.getElementById('health-fill');
-const healthText = document.getElementById('health-text');
-const selectionInfo = document.getElementById('selection');
-const action = document.getElementById('action');
-const help = document.getElementById('help');
-const overlay = document.getElementById('overlay');
-const overlayTitle = document.getElementById('overlay-title');
-const overlayText = document.getElementById('overlay-text');
-const overlayButton = document.getElementById('overlay-button');
-const info = document.getElementById('info');
-const toast = document.getElementById('toast');
+const canvas = document.querySelector('#game');
+const ctx = canvas.getContext('2d', { alpha: false });
+const arena = document.querySelector('#arena-wrap');
+const overlay = document.querySelector('#overlay');
+const button = document.querySelector('#start');
+const timeText = document.querySelector('#time');
+const allyHealth = document.querySelector('#ally-health');
+const enemyHealth = document.querySelector('#enemy-health');
+const blueCount = document.querySelector('#blue-count');
+const redCount = document.querySelector('#red-count');
+const toast = document.querySelector('#toast');
+const instruction = document.querySelector('#instruction');
+const subInstruction = document.querySelector('#sub-instruction');
+const cancelButton = document.querySelector('#cancel');
 
-let game = createGame();
+let battle = createBattle();
 let running = false;
-let last = 0;
-let pointerStart = null;
-let pointerCurrent = null;
+let lastTime = 0;
+let uiTime = -1;
+let drag = null;
+let pendingSourceId = null;
+let hovered = null;
+let toastDeadline = 0;
 let audio = null;
-let toastUntil = 0;
-let slowUntil = 0;
 let shake = 0;
-let frame = 0;
-let lastUiUpdate = 0;
+let slowFrames = 0;
 
-/** Initialize WebAudio after a real user gesture, without autoplay assumptions. */
-function ensureAudio() {
+/** Unlock the game sounds only after a deliberate player gesture. */
+function unlockAudio() {
   if (!audio) {
-    const A = window.AudioContext || window.webkitAudioContext;
-    if (A) audio = new A();
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (Audio) audio = new Audio();
   }
-  if (audio && audio.state === 'suspended') audio.resume().catch(() => {});
+  if (audio?.state === 'suspended') audio.resume().catch(() => {});
 }
 
-/** Generate compact feedback tones; every frequency is a deliberate gameplay cue. */
-function tone(freq, duration, waveform, volume, slide = 1) {
+/** Play a short oscillator with an attack/decrease envelope for arcade feedback. */
+function beep(hz, length, volume = .04, waveform = 'sine', pitchEnd = 1) {
   if (!audio) return;
-  const oscillator = audio.createOscillator();
+  const osc = audio.createOscillator();
   const gain = audio.createGain();
   const now = audio.currentTime;
-  oscillator.type = waveform;
-  oscillator.frequency.setValueAtTime(freq, now);
-  oscillator.frequency.exponentialRampToValueAtTime(Math.max(20, freq * slide), now + duration);
-  gain.gain.setValueAtTime(Math.max(.0001, volume), now);
-  gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
-  oscillator.connect(gain).connect(audio.destination);
-  oscillator.start(now);
-  oscillator.stop(now + duration);
+  osc.type = waveform;
+  osc.frequency.setValueAtTime(hz, now);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(30, hz * pitchEnd), now + length);
+  gain.gain.setValueAtTime(volume, now);
+  gain.gain.exponentialRampToValueAtTime(.0001, now + length);
+  osc.connect(gain).connect(audio.destination);
+  osc.start(now);
+  osc.stop(now + length);
 }
 
-/** Convert the browser pointer position into fixed simulation coordinates. */
-function gamePoint(event) {
-  const bounds = canvas.getBoundingClientRect();
+/** Convert CSS-scaled pointer coordinates into the fixed arena coordinate system. */
+function toWorld(event) {
+  const rect = canvas.getBoundingClientRect();
   return {
-    x: (event.clientX - bounds.left) / bounds.width * WORLD.width,
-    y: (event.clientY - bounds.top) / bounds.height * WORLD.height,
+    x: (event.clientX - rect.left) / rect.width * SIZE.width,
+    y: (event.clientY - rect.top) / rect.height * SIZE.height,
   };
 }
 
-/** Explain the next action only when the player needs the information. */
-function hint(text, duration = 2.3) {
-  toast.textContent = text;
-  toast.classList.add('visible');
-  toastUntil = performance.now() + duration * 1000;
+/** Keep transient contextual copy prompts visible but outside the battle flow. */
+function notify(message, seconds = 1.6) {
+  toast.textContent = message;
+  toastDeadline = performance.now() + seconds * 1000;
+  toast.classList.add('show');
 }
 
-/** Start a fresh play session with no persistent upgrades or hidden stat boosts. */
-function startGame() {
-  ensureAudio();
-  game = createGame(Math.floor(Math.random() * 100000));
-  overlay.hidden = true;
-  screen.classList.add('playing');
+/** Reset the scene and begin the autonomous fight without a separate tutorial level. */
+function start() {
+  unlockAudio();
+  battle = createBattle(Math.floor(Math.random() * 10000) + 1);
   running = true;
-  last = performance.now();
-  slowUntil = 0;
-  shake = 0;
-  pointerStart = null;
-  pointerCurrent = null;
-  updateUi(true);
-  hint('光る弾をタップしてコピー', 3.4);
+  drag = null;
+  pendingSourceId = null;
+  hovered = null;
+  overlay.hidden = true;
+  lastTime = performance.now();
+  uiTime = -1;
+  updateHud(true);
+  notify('赤い巨兵をつかんで、下に引っ張ろう', 3.5);
+  beep(350, .12, .06, 'triangle', 1.6);
 }
 
-/** Show a result state with an immediate one-tap retry path. */
-function finishGame() {
+/** End the fight with the achieved result and immediately available retry. */
+function finish() {
   running = false;
-  screen.classList.remove('playing');
+  pendingSourceId = null;
+  drag = null;
+  const won = battle.result === 'won';
+  document.querySelector('#overlay-title').innerHTML = won
+    ? '敵の拠点を<br><em>制圧した！</em>'
+    : '味方の拠点が<br><em>陥落した…</em>';
+  document.querySelector('#overlay-description').innerHTML =
+    'コピー ' + battle.copied + '体　／　撃破 ' + battle.kills.blue + '体<br>' +
+    (won ? '奪った戦力で、敵の軍勢を上回った。' : '敵の強さを、もっと味方に取り込もう。');
+  button.innerHTML = 'もう一度プレイ <span>→</span>';
   overlay.hidden = false;
-  overlay.classList.remove('intro');
-  overlayTitle.textContent = game.phase === 'won' ? '防衛成功' : 'コア破壊';
-  overlayText.textContent = '撃破 ' + game.kills + '体  ·  複製 ' +
-    game.cloneCount + '個  ·  SCORE ' + game.score.toLocaleString('ja-JP');
-  overlayButton.textContent = 'もう一度プレイ';
-  tone(game.phase === 'won' ? 530 : 135, .4, 'sawtooth', .09,
-    game.phase === 'won' ? 1.85 : .35);
+  beep(won ? 540 : 150, .42, .09, 'sawtooth', won ? 2 : .3);
 }
 
-/** Advance a fixed-size world with short substeps after inactive background frames. */
-function tick(now) {
-  requestAnimationFrame(tick);
-  const delta = Math.min(.07, Math.max(0, (now - (last || now)) / 1000));
-  last = now;
-  frame++;
-  if (running) {
-    updateGame(game, delta * (now < slowUntil ? .22 : 1));
-    processEvents();
-    if (game.phase !== 'playing') finishGame();
-  }
-  drawWorld(now / 1000);
-  if (now - lastUiUpdate > 80) {
-    updateUi();
-    lastUiUpdate = now;
-  }
-  if (toast.classList.contains('visible') && now > toastUntil) toast.classList.remove('visible');
+/** Reflect the actual teams' size, gates and remaining time in a compact header. */
+function updateHud(force = false) {
+  const stamp = Math.floor(battle.time * 10);
+  if (stamp === uiTime && !force) return;
+  uiTime = stamp;
+  timeText.textContent = Math.max(0, Math.ceil(battle.timeLimit - battle.time));
+  allyHealth.style.width = Math.max(0, battle.gateBlue.hp / battle.gateBlue.maxHp * 100) + '%';
+  enemyHealth.style.width = Math.max(0, battle.gateRed.hp / battle.gateRed.maxHp * 100) + '%';
+  blueCount.textContent = battle.units.filter(u => u.side === 'blue').length + '体';
+  redCount.textContent = battle.units.filter(u => u.side === 'red').length + '体';
+
+  const carrying = pendingSourceId !== null || !!drag;
+  cancelButton.hidden = !carrying;
+  const unit = pendingSourceId ? battle.units.find(u => u.id === pendingSourceId) :
+    drag ? battle.units.find(u => u.id === drag.unitId) : null;
+  instruction.textContent = carrying && unit
+    ? TYPES[unit.type].label + 'の味方を好きな場所に置く'
+    : '赤い敵をつかんで、味方側へ引っ張る';
+  subInstruction.textContent = carrying
+    ? '指を離すと味方を複製。敵本体は消えない。'
+    : '大きな敵もボスもコピー可能。何度でも増やせる。';
 }
 
-/** Process simulation events once, keeping sound and screen shake out of the engine. */
-function processEvents() {
-  for (const event of game.events.splice(0)) {
-    switch (event.type) {
-      case 'copy':
-        tone(510, .09, 'triangle', .06, 1.48);
-        hint(event.count > 1 ? event.count + '個をコピー — 貼り付ける位置をタップ' : 'コピー完了 — 貼り付ける位置をタップ', 2);
-        break;
-      case 'paste':
-        tone(220, .18, 'sawtooth', .065, 2.2);
-        shake = Math.max(shake, 3);
-        hint(event.count + '個ペースト！', 1.05);
-        break;
-      case 'invalid-paste':
-        tone(160, .08, 'sine', .045);
-        hint('中央のコアや画面外には貼れません', 2.2);
-        break;
-      case 'core-hit':
-        tone(95, .18, 'sawtooth', .1, .5);
-        shake = 5;
-        break;
-      case 'boss':
-        tone(100, .65, 'sawtooth', .1, 2.5);
-        hint('大型機接近！ 敵の攻撃を奪え', 3);
-        break;
+/** Consume events from the combat system and map them to sound and visual feedback. */
+function handleEvents() {
+  for (const event of battle.events.splice(0)) {
+    if (event.kind === 'clone') {
+      beep(event.type === 'titan' ? 160 : 460, .21, .06, 'triangle', 2.25);
+      notify(TYPES[event.type].label + 'が味方になった！', 1.0);
+    } else if (event.kind === 'slam') {
+      beep(event.side === 'blue' ? 125 : 100, .19, .07, 'sawtooth', .42);
+      shake = Math.min(6, shake + (event.power >= 70 ? 3.7 : 2.2));
+    } else if (event.kind === 'boss') {
+      notify('巨神出現！ このボスもコピーできる', 3.2);
+      beep(115, .5, .1, 'sawtooth', 1.5);
+    } else if (event.kind === 'wave' && event.wave > 3) {
+      notify('敵の援軍が到着！', 1.3);
+    } else if (event.kind === 'titan-down') {
+      shake = 5;
+      beep(82, .34, .09, 'sawtooth', .28);
     }
   }
 }
 
-/** Keep the HUD focused on only health, survival time, and immediate action. */
-function updateUi(force = false) {
-  topTime.textContent = Math.ceil(game.remaining);
-  score.textContent = game.score.toLocaleString('ja-JP');
-  health.style.width = Math.round(game.core.hp / game.core.maxHp * 100) + '%';
-  healthText.textContent = Math.round(game.core.hp / game.core.maxHp * 100) + '%';
-  const carrying = !!game.clipboard;
-  selectionInfo.textContent = carrying ? game.clipboard.count + '個コピー中' : 'COPY';
-  action.textContent = carrying ? '貼り付け先をタップ' : '敵の弾をタップ';
-  arena.classList.toggle('carrying', carrying);
-  help.textContent = carrying ? '同じ向きに飛ぶ。敵の手前に貼ろう' : 'ドラッグして複数まとめてコピー';
-  if (force) toast.classList.remove('visible');
+/** Execute a drag-copy while preserving original enemies and their combat behavior. */
+function attemptCopy(sourceId, x, y) {
+  const result = copyEnemy(battle, sourceId, x, y);
+  if (result.ok) {
+    handleEvents();
+    slowFrames = 10;
+    shake = Math.max(shake, result.unit.radius >= 20 ? 3.5 : 1.5);
+    pendingSourceId = null;
+    return true;
+  }
+  notify(result.reason === 'blocked' ? '拠点の真上には配置できません'
+    : result.reason === 'limit' ? '戦場がいっぱいです'
+    : 'もう一度敵をつかんでください', 1.5);
+  pendingSourceId = null;
+  return false;
 }
 
-/** Draw a glowing particle-free scene background with stable contrast. */
-function drawBackground(t) {
-  const ctx = context;
-  const gradient = ctx.createLinearGradient(0, 0, 0, WORLD.height);
-  gradient.addColorStop(0, '#0e1c34');
-  gradient.addColorStop(1, '#08131f');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, WORLD.width, WORLD.height);
-
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(108,168,205,.075)';
-  for (let x = 0; x < WORLD.width; x += 30) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD.height); ctx.stroke();
-  }
-  for (let y = 0; y < WORLD.height; y += 30) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD.width, y); ctx.stroke();
-  }
-
-  ctx.strokeStyle = 'rgba(109,187,216,.12)';
-  for (const r of [74, 122, 181, 230]) {
-    ctx.beginPath(); ctx.arc(game.core.x, game.core.y, r, 0, Math.PI * 2); ctx.stroke();
-  }
-  ctx.strokeStyle = 'rgba(255,181,106,.09)';
-  const a = t * .12;
-  for (let k = 0; k < 8; k++) {
-    ctx.beginPath();
-    const theta = k / 8 * Math.PI * 2 + a;
-    ctx.moveTo(game.core.x + Math.cos(theta) * 215, game.core.y + Math.sin(theta) * 215);
-    ctx.lineTo(game.core.x + Math.cos(theta) * 235, game.core.y + Math.sin(theta) * 235);
-    ctx.stroke();
-  }
-}
-
-/** Render the defended core as a distinct objective, never a fake physical projectile. */
-function drawCore(t) {
-  const ctx = context;
-  const c = game.core;
-  const glow = .25 + Math.sin(t * 3.1) * .07;
-  ctx.save();
-  ctx.translate(c.x, c.y);
-  if (game.bigHit > 0) ctx.globalAlpha = .6 + Math.sin(t * 85) * .35;
-  ctx.shadowColor = '#4bceee'; ctx.shadowBlur = 28;
-  ctx.fillStyle = 'rgba(42,161,209,' + glow + ')';
-  circle(ctx, 0, 0, 43);
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = '#5de2f4'; ctx.lineWidth = 3.5;
-  circle(ctx, 0, 0, 26, true);
-  ctx.rotate(t * .35);
-  for (let i = 0; i < 4; i++) {
-    ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = '#83deee';
-    ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(8, -8); ctx.lineTo(0, -12); ctx.lineTo(-8, -8); ctx.closePath(); ctx.fill();
-  }
-  ctx.rotate(-t * .7);
-  ctx.fillStyle = '#e0fcff'; circle(ctx, 0, 0, 11);
-  ctx.fillStyle = '#5fc6db'; circle(ctx, 0, 0, 5);
-  ctx.restore();
-}
-
-/** Draw an enemy ship with a visible forward-facing weapon and a distinctive hull. */
-function drawEnemy(e, t) {
-  const ctx = context;
-  const isClone = e.generation > 0;
-  ctx.save(); ctx.translate(e.x, e.y);
-  const angle = Math.atan2(game.core.y - e.y, game.core.x - e.x);
-  ctx.rotate(angle);
-  ctx.shadowColor = isClone ? '#7adfff' : '#f86672';
-  ctx.shadowBlur = e.flash > 0 ? 23 : isClone ? 15 : 7;
-  ctx.fillStyle = e.flash > 0 ? '#fff3e8' : isClone ? '#6cc3d8' :
-    e.enemyKind === 'boss' ? '#f3ac65' : e.enemyKind === 'rocket' ? '#e99a81' : '#ec6d74';
-  if (e.enemyKind === 'rocket' || e.enemyKind === 'boss') {
-    ctx.beginPath();
-    ctx.moveTo(e.r + 7, 0); ctx.lineTo(e.r * .35, e.r * .85);
-    ctx.lineTo(-e.r * .8, e.r * .72); ctx.lineTo(-e.r, 0);
-    ctx.lineTo(-e.r * .8, -e.r * .72); ctx.lineTo(e.r * .35, -e.r * .85);
-    ctx.closePath(); ctx.fill();
-  } else {
-    roundRect(ctx, -e.r, -e.r * .8, e.r * 2, e.r * 1.6, 5);
-    ctx.fill();
-  }
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#5b273e';
-  roundRect(ctx, 3, -4, e.r + 11, 8, 3); ctx.fill();
-  ctx.fillStyle = '#ffd9b7'; roundRect(ctx, 11, -2, e.r, 4, 2); ctx.fill();
-  ctx.fillStyle = '#27293f'; circle(ctx, -e.r * .22, 0, e.r * .35);
-  ctx.fillStyle = '#ffc4ad'; circle(ctx, -e.r * .2, 0, e.r * .15);
-  if (isClone) {
-    ctx.strokeStyle = '#b5f4ff'; ctx.lineWidth = 1.7;
-    circle(ctx, 0, 0, e.r + 5, true);
-  }
-  ctx.restore();
-  if (e.hp < e.maxHp) {
-    ctx.fillStyle = '#1d2935'; ctx.fillRect(e.x - e.r, e.y - e.r - 11, e.r * 2, 3);
-    ctx.fillStyle = '#ffc280'; ctx.fillRect(e.x - e.r, e.y - e.r - 11,
-      e.r * 2 * Math.max(0, e.hp / e.maxHp), 3);
-  }
-  if (e.cloneUntil !== null) drawCloneTimer(e);
-}
-
-/** Render visual clone expiry so temporary objects never disappear unexpectedly. */
-function drawCloneTimer(e) {
-  const remain = Math.max(0, e.cloneUntil - game.time);
-  const progress = Math.min(1, remain / 4);
-  const ctx = context;
-  ctx.strokeStyle = 'rgba(118,238,255,.7)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(e.x, e.y, e.r + 7, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
-  ctx.stroke();
-}
-
-/** Draw projectiles with a trailing light streak that reveals direction and speed. */
-function drawProjectile(e) {
-  const ctx = context;
-  const angle = Math.atan2(e.vy, e.vx);
-  ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(angle);
-  ctx.shadowColor = e.generation > 0 ? '#82f4ff' : '#ffbe66';
-  ctx.shadowBlur = e.kind === 'bolt' ? 14 : 18;
-  ctx.strokeStyle = e.generation > 0 ? '#8eecfa' : '#f6ae60';
-  ctx.lineWidth = e.r * .85;
-  ctx.lineCap = 'round';
-  ctx.globalAlpha = .5;
-  ctx.beginPath(); ctx.moveTo(-e.r * 3.8, 0); ctx.lineTo(-e.r * .65, 0); ctx.stroke();
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = e.generation > 0 ? '#c5f8ff' : '#ffe1a2';
-  if (e.kind === 'rocket') {
-    ctx.beginPath();
-    ctx.moveTo(e.r * 1.2, 0); ctx.lineTo(-e.r, -e.r * .65); ctx.lineTo(-e.r * .8, e.r * .65); ctx.closePath(); ctx.fill();
-  } else if (e.kind === 'bomb') {
-    circle(ctx, 0, 0, e.r);
-    ctx.strokeStyle = '#fff4d0'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(-e.r*.45,0);ctx.lineTo(e.r*.45,0);ctx.stroke();
-  } else circle(ctx, 0, 0, e.r);
-  ctx.restore();
-  if (e.cloneUntil !== null) drawCloneTimer(e);
-}
-
-/** Render explosion life proportionally, making an almost-finished source distinguishable. */
-function drawExplosion(e) {
-  const ctx = context;
-  const f = e.ttl / e.totalTtl;
-  ctx.save(); ctx.globalAlpha = Math.min(1, f * 1.8);
-  const gradient = ctx.createRadialGradient(e.x, e.y, 1, e.x, e.y, e.r * (1.15 - f * .25));
-  gradient.addColorStop(0, '#fff8c6');
-  gradient.addColorStop(.3, '#ffd58a');
-  gradient.addColorStop(.68, e.generation > 0 ? '#5ed5e8' : '#fa7b53');
-  gradient.addColorStop(1, 'rgba(251,85,67,0)');
-  ctx.fillStyle = gradient;
-  circle(ctx, e.x, e.y, e.r * (1.15 - f * .25));
-  ctx.restore();
-}
-
-/** Render particles and ripples after world entities so hits feel connected to impacts. */
-function drawEffects() {
-  const ctx = context;
-  for (const s of game.shockwaves) {
-    const f = 1 - s.ttl / s.total;
-    ctx.strokeStyle = s.color || 'rgba(255,190,113,' + ((1 - f) * .8) + ')';
-    ctx.lineWidth = 3 * (1 - f) + .4;
-    circle(ctx, s.x, s.y, s.max * f, true);
-  }
-  for (const p of game.particles) {
-    ctx.globalAlpha = Math.min(1, p.life / .28);
-    ctx.fillStyle = p.color;
-    circle(ctx, p.x, p.y, p.size);
-  }
-  ctx.globalAlpha = 1;
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 13px system-ui, sans-serif';
-  for (const e of game.effects) {
-    ctx.globalAlpha = Math.min(1, e.ttl * 1.8);
-    ctx.fillStyle = '#ffe5ab'; ctx.fillText(e.text, e.x, e.y - 17);
-  }
-  ctx.globalAlpha = 1;
-}
-
-/** Preview the pending paste without changing any physics or forcing a confirmation click. */
-function drawClipboard() {
-  if (!running) return;
-  const ctx = context;
-  const clip = game.clipboard;
-  if (clip && pointerCurrent && !pointerStart) {
-    ctx.save();
-    ctx.globalAlpha = .5;
-    ctx.strokeStyle = '#9ceefa'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
-    ctx.strokeRect(pointerCurrent.x - clip.width / 2, pointerCurrent.y - clip.height / 2, clip.width, clip.height);
-    ctx.setLineDash([]);
-    for (const e of clip.items) {
-      const x = pointerCurrent.x + e.x, y = pointerCurrent.y + e.y;
-      ctx.fillStyle = '#7bdbeb';
-      circle(ctx, x, y, e.r);
-      if (e.kind !== 'enemy' && e.kind !== 'explosion') {
-        const l = Math.hypot(e.vx, e.vy) || 1;
-        ctx.strokeStyle = '#c5f9ff'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + e.vx / l * 18, y + e.vy / l * 18);ctx.stroke();
-      }
+/** Start dragging an enemy or complete tap-to-select then tap-to-place fallback. */
+canvas.addEventListener('pointerdown', event => {
+  if (!running || event.isPrimary === false) return;
+  event.preventDefault();
+  const pt = toWorld(event);
+  if (pendingSourceId !== null) {
+    const clicked = findCopyTarget(battle, pt.x, pt.y);
+    if (clicked && clicked.id !== pendingSourceId) {
+      pendingSourceId = clicked.id;
+      hovered = pt;
+      updateHud(true);
+    } else {
+      attemptCopy(pendingSourceId, pt.x, pt.y);
+      updateHud(true);
     }
-    ctx.restore();
-  }
-  if (pointerStart && pointerCurrent) {
-    const dx = pointerCurrent.x - pointerStart.x;
-    const dy = pointerCurrent.y - pointerStart.y;
-    if (Math.abs(dx) + Math.abs(dy) > 12 && !clip) {
-      ctx.save();ctx.fillStyle = 'rgba(97,213,236,.13)';ctx.strokeStyle = '#8ae9f5';
-      ctx.lineWidth = 2;ctx.setLineDash([6, 4]);
-      ctx.fillRect(pointerStart.x, pointerStart.y, dx, dy);
-      ctx.strokeRect(pointerStart.x, pointerStart.y, dx, dy);
-      ctx.restore();
-    }
-  }
-}
-
-/** Draw the full game world at one stable virtual resolution. */
-function drawWorld(t) {
-  const ctx = context;
-  ctx.save();
-  if (shake > .1) {
-    ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake);
-    shake *= .85;
-  }
-  drawBackground(t);
-  for (const e of game.entities) {
-    if (e.dead) continue;
-    if (e.kind === 'enemy') drawEnemy(e, t);
-    else if (e.kind === 'explosion') drawExplosion(e);
-    else drawProjectile(e);
-  }
-  drawCore(t);
-  drawEffects();
-  drawClipboard();
-  ctx.restore();
-}
-
-/** Draw circles with a single helper that supports fill or outline. */
-function circle(ctx, x, y, radius, stroke = false) {
-  ctx.beginPath();ctx.arc(x, y, Math.max(.1, radius), 0, Math.PI * 2);
-  if (stroke) ctx.stroke(); else ctx.fill();
-}
-
-/** Draw a rounded rectangle on older and newer canvas implementations. */
-function roundRect(ctx, x, y, w, h, radius) {
-  const r = Math.min(radius, Math.abs(w) / 2, Math.abs(h) / 2);
-  ctx.beginPath();ctx.moveTo(x + r, y);ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);ctx.closePath();
-}
-
-/** Handle tap copy/tap paste and drag-range copy with pointer capture. */
-function pointerUp(event) {
-  if (!running || !pointerStart) return;
-  const end = gamePoint(event);
-  const start = pointerStart;
-  pointerStart = null;
-  pointerCurrent = end;
-  if (game.clipboard) {
-    pasteRegion(game, end.x, end.y);
-    slowUntil = 0;
-    processEvents();
-    updateUi(true);
     return;
   }
-  const distance = Math.hypot(end.x - start.x, end.y - start.y);
-  if (distance > 14) {
-    const x = (start.x + end.x) / 2, y = (start.y + end.y) / 2;
-    copyRegion(game, x, y, Math.abs(end.x - start.x), Math.abs(end.y - start.y));
-  } else {
-    const entity = pickEntity(game, end.x, end.y);
-    if (entity) copyEntity(game, entity);
-    else hint('敵弾・爆弾・敵本体をタップ', 1.4);
+  const unit = findCopyTarget(battle, pt.x, pt.y);
+  if (!unit) {
+    notify('赤い敵を指でつかもう', 1.1);
+    return;
   }
-  if (game.clipboard) {
-    slowUntil = performance.now() + 1700;
-    pointerCurrent = null;
-  }
-  processEvents();
-  updateUi(true);
-}
-
-canvas.addEventListener('pointerdown', event => {
-  if (!running) return;
-  event.preventDefault();
-  if (event.isPrimary === false) return;
-  pointerStart = gamePoint(event);
-  pointerCurrent = pointerStart;
+  drag = { unitId: unit.id, start: pt, position: pt, begun: performance.now() };
+  hovered = pt;
   canvas.setPointerCapture(event.pointerId);
+  updateHud(true);
 });
 canvas.addEventListener('pointermove', event => {
   if (!running) return;
-  pointerCurrent = gamePoint(event);
+  hovered = toWorld(event);
+  if (drag) drag.position = hovered;
 });
-canvas.addEventListener('pointerup', pointerUp);
-canvas.addEventListener('pointercancel', () => { pointerStart = null; pointerCurrent = null; });
-canvas.addEventListener('contextmenu', event => event.preventDefault());
-overlayButton.addEventListener('click', startGame);
-document.getElementById('cancel').addEventListener('click', () => {
-  cancelCopy(game);slowUntil = 0;pointerCurrent = null;updateUi(true);
-  hint('選択を解除しました', 1);
-});
-document.addEventListener('keydown', event => {
-  if (event.key === 'Escape') {
-    cancelCopy(game);slowUntil = 0;pointerCurrent = null;updateUi(true);
+canvas.addEventListener('pointerup', event => {
+  if (!running || !drag) return;
+  const pt = toWorld(event);
+  const source = drag.unitId;
+  const moved = Math.hypot(pt.x - drag.start.x, pt.y - drag.start.y);
+  drag = null;
+  if (moved >= 24) attemptCopy(source, pt.x, pt.y);
+  else {
+    pendingSourceId = source;
+    notify('置きたい場所をタップすると味方になる', 2.4);
   }
-  if ((event.key === 'Enter' || event.key === ' ') && !running) startGame();
+  hovered = pt;
+  updateHud(true);
 });
-document.addEventListener('visibilitychange', () => { last = performance.now(); });
+canvas.addEventListener('pointercancel', () => { drag = null; hovered = null; updateHud(true); });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+cancelButton.addEventListener('click', () => {
+  drag = null; pendingSourceId = null; hovered = null;
+  updateHud(true);
+});
+button.addEventListener('click', start);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { drag = null; pendingSourceId = null; updateHud(true); }
+  if ((e.key === 'Enter' || e.key === ' ') && !running) { e.preventDefault(); start(); }
+});
+document.addEventListener('visibilitychange', () => { lastTime = performance.now(); });
+
+/** Draw a blurred ground vignette and lane markers for battlefield geography. */
+function drawTerrain(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, SIZE.height);
+  g.addColorStop(0, '#463b4a'); g.addColorStop(.32, '#38434c');
+  g.addColorStop(.65, '#344b52'); g.addColorStop(1, '#2b4e59');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, SIZE.width, SIZE.height);
+
+  ctx.fillStyle = 'rgba(10,22,32,.17)';
+  ctx.beginPath(); ctx.ellipse(180, 300, 165, 235, 0, 0, Math.PI * 2); ctx.fill();
+
+  for (let col = 0; col < 12; col++) {
+    for (let row = 0; row < 19; row++) {
+      const x = col * 35 + (row % 2) * 16;
+      const y = row * 35 + 9;
+      ctx.strokeStyle = row < 9 ? '#ffc1a20d' : '#9be9fa0a';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, 33, 33);
+    }
+  }
+  // Two subdued flanking roads make unit depth and formations legible.
+  ctx.fillStyle = 'rgba(19,26,34,.12)';
+  ctx.fillRect(52, 62, 55, 471);ctx.fillRect(253, 62, 55, 471);
+  ctx.strokeStyle = '#e4d7bc1e';ctx.lineWidth = 2;ctx.setLineDash([7, 15]);
+  for (const x of [78, 280]) {
+    ctx.beginPath();ctx.moveTo(x, 89);ctx.lineTo(x, 515);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  for (let i = 0; i < 29; i++) {
+    const x = (i * 97 + 49) % 351;
+    const y = (i * 127 + 39) % 556 + 20;
+    ctx.fillStyle = i % 3 === 0 ? 'rgba(252,214,167,.14)' : 'rgba(15,29,39,.23)';
+    ctx.save();ctx.translate(x, y);ctx.rotate(i * .79);
+    ctx.fillRect(-3, -2, 9, 4);ctx.restore();
+  }
+  ctx.fillStyle = 'rgba(236,122,105,.055)';
+  ctx.fillRect(0, 0, SIZE.width, 130);
+  ctx.fillStyle = 'rgba(92,209,234,.055)';
+  ctx.fillRect(0, 480, SIZE.width, 120);
+  ctx.strokeStyle = '#ffbaa228';ctx.lineWidth = 2;
+  ctx.beginPath();ctx.moveTo(0, 74);ctx.lineTo(SIZE.width, 74);ctx.stroke();
+  ctx.strokeStyle = '#aaf5ff26';
+  ctx.beginPath();ctx.moveTo(0, 525);ctx.lineTo(SIZE.width, 525);ctx.stroke();
+}
+
+/** Shared rendering helper for filled and outlined circular effects. */
+function circle(x, y, r, fill = true) {
+  ctx.beginPath();ctx.arc(x, y, Math.max(0.1, r), 0, Math.PI * 2);
+  fill ? ctx.fill() : ctx.stroke();
+}
+
+/** Render each base as a fortress and a clearly destructible strategic target. */
+function drawGate(gate, side, t) {
+  ctx.save();ctx.translate(gate.x, gate.y);
+  const blue = side === 'blue';
+  ctx.shadowBlur = 15;ctx.shadowColor = blue ? '#70ddfa' : '#ff9277';
+  ctx.fillStyle = blue ? '#417b92' : '#965467';
+  ctx.beginPath();
+  ctx.moveTo(-40,-14);ctx.lineTo(-27,-31);ctx.lineTo(27,-31);ctx.lineTo(40,-14);
+  ctx.lineTo(40,17);ctx.lineTo(22,34);ctx.lineTo(-22,34);ctx.lineTo(-40,17);ctx.closePath();ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = blue ? '#9deaf9' : '#ffc2a0';ctx.lineWidth=3;ctx.stroke();
+  ctx.fillStyle = '#142b3c';ctx.fillRect(-21,-12,42,26);
+  ctx.fillStyle = blue ? '#a3faff' : '#ffd5a0';
+  ctx.rotate(t * (blue ? .65 : -.65));
+  ctx.beginPath();
+  for (let i=0; i<8; i++) {
+    const a = i*Math.PI/4;
+    const r = i%2 ? 13 : 19;
+    i===0 ? ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r) : ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+  }
+  ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+
+/** Draw a unit as a tiny readable soldier rather than an indistinguishable dot. */
+function drawUnit(u, t, ghost = false) {
+  const ally = u.side === 'blue';
+  const stats = TYPES[u.type];
+  const r = u.radius;
+  const isLarge = ['guardian','titan'].includes(u.type);
+  ctx.save();ctx.translate(u.x, u.y);
+  const bob = u.windup > 0 ? -2 : Math.sin(u.step * 2.3) * (isLarge ? 1.1 : 1.8);
+  const energy = u.windup > 0 ? 1 - Math.max(0, u.windup) / stats.windup : 0;
+  const glow = ally ? '#72e8fc' : '#ff8e7d';
+
+  ctx.fillStyle = '#07142181';
+  ctx.beginPath();ctx.ellipse(0, r*.7, r*1.04, r*.40, 0, 0, Math.PI*2);ctx.fill();
+
+  if (u.spawnGlow > 0 || ghost) {
+    ctx.globalAlpha = ghost ? .55 : Math.min(.9, u.spawnGlow * .8);
+    ctx.strokeStyle = ally ? '#aefaff' : '#ffd2aa';ctx.lineWidth=3;
+    circle(0, 0, r + 11 + (1-u.spawnGlow)*8, false);
+    ctx.globalAlpha = 1;
+  }
+
+  if (u.windup > 0 && isLarge) {
+    ctx.strokeStyle = ally ? '#abf5ff' : '#ffc1a2';
+    ctx.lineWidth = 3 + energy * 3;
+    ctx.globalAlpha = .4 + energy*.5;
+    circle(0, 0, r + 8 + energy*18, false);
+    ctx.globalAlpha = 1;
+  }
+  ctx.translate(0, bob);
+  ctx.shadowColor = glow;ctx.shadowBlur = u.flash > 0 ? 26 : ghost ? 18 : 5;
+  ctx.fillStyle = ally ? '#479fbf' : '#b95366';
+  if (isLarge) {
+    ctx.beginPath();
+    ctx.moveTo(-r*.88,-r*.38);ctx.lineTo(-r*1.2,-r*.78);
+    ctx.lineTo(-r*.33,-r*.82);ctx.lineTo(r*.33,-r*.82);
+    ctx.lineTo(r*1.2,-r*.78);ctx.lineTo(r*.88,-r*.38);
+    ctx.lineTo(r*.84,r*.75);ctx.lineTo(-r*.84,r*.75);ctx.closePath();ctx.fill();
+  } else {
+    circle(0, 1, r);
+  }
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = ally ? '#b7f8ff' : '#ffd0b0';ctx.lineWidth = isLarge ? 3 : 2;
+  circle(0, 1, r, false);
+
+  // Weapon geometry gives each class its own silhouette and identifiable attack source.
+  if (u.type === 'sword') {
+    ctx.strokeStyle = '#fbf4de';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(r*.25, r*.5);ctx.lineTo(r*.95,-r*.91);ctx.stroke();
+    ctx.strokeStyle = ally ? '#96f5ff' : '#ffd08b';ctx.lineWidth=3.5;
+    ctx.beginPath();ctx.moveTo(r*.5,-r*.4);ctx.lineTo(r*1.18,-r*.25);ctx.stroke();
+  } else if (u.type === 'archer') {
+    ctx.strokeStyle = '#fee6ab';ctx.lineWidth=2.7;
+    ctx.beginPath();ctx.arc(r*.55, 0, r*.73, -1.25, 1.25);ctx.stroke();
+    ctx.strokeStyle = '#edfafb';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(r*.78,-r*.68);ctx.lineTo(r*.78,r*.68);ctx.stroke();
+  } else if (u.type === 'guardian' || u.type === 'titan') {
+    ctx.fillStyle = ally ? '#87d9e9' : '#e7a17f';
+    ctx.fillRect(-r*1.18,-r*.36,r*.49,r*.77);
+    ctx.fillRect(r*.69,-r*.36,r*.49,r*.77);
+    ctx.fillStyle='#dae5db';
+    ctx.fillRect(-r*.23,-r*.71,r*.46,r*.65);
+    if (u.type === 'titan') {
+      ctx.fillStyle = '#f6d9aa';
+      ctx.beginPath();ctx.moveTo(-r*.8,-r*.4);ctx.lineTo(-r*1.23,-r*1.5);ctx.lineTo(-r*.2,-r*.9);ctx.fill();
+      ctx.beginPath();ctx.moveTo(r*.8,-r*.4);ctx.lineTo(r*1.23,-r*1.5);ctx.lineTo(r*.2,-r*.9);ctx.fill();
+    }
+  } else if (u.type === 'mage') {
+    ctx.fillStyle = '#cfb4f8';ctx.beginPath();
+    ctx.moveTo(-r*.85,-r*.46);ctx.lineTo(0,-r*1.8);ctx.lineTo(r*.83,-r*.46);ctx.closePath();ctx.fill();
+    ctx.fillStyle = ally ? '#bcf8ff' : '#ffd2d2';circle(r*1.02,-r*.27,r*.37);
+  } else if (u.type === 'healer') {
+    ctx.fillStyle = '#fbe6b0';ctx.fillRect(-r*.18,-r*.60,r*.36,r*1.12);
+    ctx.fillRect(-r*.5,-r*.28,r*1.0,r*.37);
+  }
+  // Tiny eyes and a tiny expression remain visible on smartphone scale.
+  ctx.fillStyle = '#f5f6eb';
+  circle(-r*.3,-r*.12,isLarge?3.0:2.0);
+  circle(r*.3,-r*.12,isLarge?3.0:2.0);
+  ctx.fillStyle = '#153248';
+  circle(-r*.28,-r*.12,isLarge?1.5:1.1);
+  circle(r*.32,-r*.12,isLarge?1.5:1.1);
+
+  if (u.hp < u.maxHp || isLarge) {
+    const width = r*2.1;
+    ctx.fillStyle = '#142631ce';ctx.fillRect(-width/2,-r-12,width,4);
+    ctx.fillStyle = ally ? '#83e4ef' : '#ff967e';
+    ctx.fillRect(-width/2,-r-12,width*(u.hp/u.maxHp),4);
+  }
+  ctx.restore();
+}
+
+/** Render moving arrows and glowing spells with enough contrast to read direction. */
+function drawProjectile(p) {
+  const angle = Math.atan2(p.vy, p.vx);
+  ctx.save();ctx.translate(p.x, p.y);ctx.rotate(angle);
+  ctx.shadowBlur = 13;ctx.shadowColor = p.side === 'blue' ? '#8aeeff' : '#ffaf78';
+  ctx.strokeStyle = p.side === 'blue' ? '#b5faff' : '#ffcf95';
+  ctx.lineWidth = p.kind === 'orb' ? 7 : 2.8;
+  ctx.lineCap = 'round';
+  ctx.beginPath();ctx.moveTo(-17,0);ctx.lineTo(4,0);ctx.stroke();
+  ctx.fillStyle = p.kind === 'orb' ? '#ebd4fa' : p.side === 'blue' ? '#efffff' : '#ffe4b2';
+  if (p.kind === 'orb') circle(0,0,6);else {
+    ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-3,-4);ctx.lineTo(-3,4);ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** Draw particle trails and expanding rings above the characters. */
+function drawEffects() {
+  for (const e of battle.effects) {
+    const alpha = Math.min(1,e.life/e.totalLife);
+    if (e.kind === 'ring') {
+      ctx.globalAlpha = alpha*.85;ctx.lineWidth = 3*(1-alpha)+.8;
+      ctx.strokeStyle=e.color;
+      circle(e.x,e.y, e.radius*(1-alpha), false);
+    } else {
+      ctx.globalAlpha=alpha;
+      ctx.fillStyle=e.color;
+      circle(e.x,e.y,e.r);
+    }
+  }
+  ctx.globalAlpha=1;
+}
+
+/** Draw the direct gesture's source, ghost copy, and link as a live placement preview. */
+function drawDrag() {
+  const id = drag?.unitId ?? pendingSourceId;
+  if (id === null) return;
+  const source = battle.units.find(u => u.id === id && !u.dead);
+  if (!source) return;
+  const pos = drag?.position ?? hovered ?? { x: 180, y: 410 };
+  const x = Math.max(15, Math.min(345,pos.x));
+  const y = Math.max(74,Math.min(526,pos.y));
+  ctx.save();
+  ctx.setLineDash([8,5]);ctx.lineWidth=2.5;ctx.strokeStyle='#b1f7ffb0';
+  ctx.beginPath();ctx.moveTo(source.x,source.y);ctx.quadraticCurveTo(source.x+35,(source.y+y)/2,x,y);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle='#9af6ff';ctx.lineWidth=2.5;
+  circle(source.x,source.y,source.radius+9,false);
+  ctx.fillStyle='#91f2ff22';circle(x,y,source.radius+17);
+  ctx.strokeStyle='#b6fbffb0';circle(x,y,source.radius+17,false);
+  drawUnit({ ...source, x, y, side:'blue', hp:source.maxHp, spawnGlow:1, flash:.1 }, battle.time, true);
+  ctx.font='bold 12px -apple-system,sans-serif';ctx.textAlign='center';
+  ctx.fillStyle='#e9ffff';ctx.shadowBlur=8;ctx.shadowColor='#16384a';
+  ctx.fillText(TYPES[source.type].label + 'を味方に！',Math.max(65,Math.min(300,x)),Math.max(92,y-source.radius-25));
+  ctx.restore();
+}
+
+/** Render an initial in-world gesture arrow so instructions match actual objects. */
+function drawPrompt(t) {
+  if (!running || battle.copied > 0 || drag || pendingSourceId !== null || battle.time > 10) return;
+  const source = battle.units.find(u => u.side === 'red' && u.type === 'guardian');
+  if (!source) return;
+  ctx.save();ctx.globalAlpha=.65+Math.sin(t*3)*.20;
+  ctx.strokeStyle='#b2faff';ctx.lineWidth=3;ctx.setLineDash([5,8]);
+  ctx.beginPath();ctx.moveTo(source.x+23,source.y+20);
+  ctx.quadraticCurveTo(source.x+82,310,source.x+18,405);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(source.x+11,393);ctx.lineTo(source.x+18,408);ctx.lineTo(source.x+30,396);ctx.stroke();
+  ctx.fillStyle='#e7ffff';ctx.font='bold 13px -apple-system,sans-serif';ctx.textAlign='center';
+  ctx.fillText('この敵を味方に！',180,330);
+  ctx.restore();
+}
+
+/** Draw the full scene with a capped shake that cannot displace pointer hitboxes. */
+function render(t) {
+  ctx.save();
+  if (shake > .2) {
+    ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+    shake*=.78;
+  }
+  drawTerrain(t);
+  drawGate(battle.gateRed,'red',t);
+  drawGate(battle.gateBlue,'blue',t);
+  // Character y-order preserves obvious physical layering.
+  const sorted = [...battle.units].sort((a,b)=>a.y-b.y);
+  for (const unit of sorted) drawUnit(unit,t);
+  for (const projectile of battle.projectiles) drawProjectile(projectile);
+  drawEffects();
+  drawPrompt(t);
+  drawDrag();
+  ctx.restore();
+}
+
+/** Run at actual animation speed; hold slower motion briefly for a successful copy. */
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.max(0,Math.min(.05,(now-(lastTime||now))/1000));
+  lastTime=now;
+  if (running) {
+    updateBattle(battle,dt*(drag?.unitId ? .72 : slowFrames>0 ? .75 : 1));
+    if (slowFrames>0) slowFrames--;
+    handleEvents();
+    if (battle.result !== 'playing') finish();
+  }
+  render(now/1000);
+  updateHud();
+  if (toast.classList.contains('show') && now>toastDeadline) toast.classList.remove('show');
+}
+
 window.__copyWarDebug = {
-  get state() { return game; },
-  startGame, copyRegion: (x, y, w, h) => copyRegion(game, x, y, w, h),
-  pasteRegion: (x, y) => pasteRegion(game, x, y),
+  get state() { return battle; },
+  start,
+  findCopyTarget: (x,y)=>findCopyTarget(battle,x,y),
+  copyEnemy: (id,x,y)=>copyEnemy(battle,id,x,y),
 };
-requestAnimationFrame(tick);
+requestAnimationFrame(frame);

@@ -2,62 +2,49 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0a1728">
-  <meta name="description" content="敵の攻撃も、爆発も、戦場ごとコピー。COPY WAR — コピー＆ペーストで戦況を書き換えるリアルタイムアクション。">
-  <title>COPY WAR — 戦況を、コピペで変えろ。</title>
-  <link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./overlay.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#101c31">
+  <meta name="description" content="敵の強さを、そのまま奪え。敵を引っ張って味方として増やす戦場コピーアクション COPY WAR。">
+  <title>COPY WAR — 敵をコピーして、味方にしろ</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <main id="screen" class="game-screen">
-    <header class="topbar">
-      <div class="brand"><span class="brand-mark">✦</span><span>COPY<span class="accent">WAR</span></span></div>
-      <div class="header-stats">
-        <div class="stat"><span class="stat-label">SCORE</span><strong id="score">0</strong></div>
-        <div class="stat timer"><span class="stat-label">TIME</span><strong id="time">82</strong></div>
-      </div>
+  <main id="screen">
+    <header class="hud">
+      <div class="brand"><span class="star">✦</span> COPY<span>WAR</span></div>
+      <div class="time-unit"><span>残り</span><b id="time">100</b><small>秒</small></div>
     </header>
-    <section class="game-layout">
-      <div class="objective">
-        <span class="objective-title"><span class="live-dot"></span>CORE DEFENSE</span>
-        <div class="health-group">
-          <div class="health-track"><span id="health-fill"></span></div>
-          <span class="health-numeral" id="health-text">100%</span>
-        </div>
+    <section class="body">
+      <div class="enemy-header">
+        <div class="faction"><span class="red-icon">◆</span> 敵の拠点 <small id="red-count">6体</small></div>
+        <div class="hp-wrap"><div class="hp-bar enemy"><div id="enemy-health"></div></div></div>
       </div>
-      <div id="arena-shell" class="arena-shell">
-        <canvas id="arena" width="360" height="600" aria-label="コピー＆ペーストで敵の攻撃を利用してコアを守る戦場"></canvas>
-        <div id="toast" class="toast" aria-live="polite"></div>
-        <div class="crosshair corner-a"></div><div class="crosshair corner-b"></div>
+      <div class="arena-wrap" id="arena-wrap">
+        <canvas id="game" width="360" height="600" aria-label="敵を掴んで引っ張り、味方としてコピーする戦場"></canvas>
+        <div class="battle-toast" id="toast"></div>
       </div>
-      <div class="control-strip">
-        <div class="left-control">
-          <div class="tool-label" id="selection">COPY</div>
-          <div class="tool-instruction" id="action">敵の弾をタップ</div>
-          <div class="tool-help" id="help">ドラッグして複数まとめてコピー</div>
-        </div>
-        <button type="button" id="cancel" class="cancel" aria-label="コピー選択を解除する"><span>×</span><small>解除</small></button>
+      <div class="friend-header">
+        <div class="faction"><span class="blue-icon">◆</span> 味方の拠点 <small id="blue-count">4体</small></div>
+        <div class="hp-wrap"><div class="hp-bar ally"><div id="ally-health"></div></div></div>
+      </div>
+      <div class="control">
+        <div class="control-symbol">↧</div>
+        <div class="control-text"><strong id="instruction">赤い敵をつかんで、味方側へ引っ張る</strong><span id="sub-instruction">敵の能力を丸ごとコピー。何度でも味方にできる。</span></div>
+        <button type="button" id="cancel" aria-label="コピー選択を解除" hidden>解除</button>
       </div>
     </section>
-    <footer class="footer"><span>コピー → ペースト → 連鎖</span><span>撃破でコア修復</span></footer>
-    <div id="overlay" class="overlay intro">
-      <div class="overlay-backdrop"></div>
-      <div class="overlay-card">
-        <div class="eyebrow"><span class="eyebrow-dot"></span> 敵の攻撃を、そのまま奪え</div>
-        <div class="graphic">
-          <span class="source-orb">●</span><span class="route-icon">↗</span><span class="target-orbs">●<br>● ●</span>
-          <div class="graphic-ring ring-one"></div><div class="graphic-ring ring-two"></div>
+    <div id="overlay" class="overlay">
+      <div class="intro-card">
+        <div class="eyebrow">ENEMY → ALLY</div>
+        <div class="intro-graphic">
+          <div class="intro-enemy">敵</div>
+          <div class="intro-arrow">⤵</div>
+          <div class="intro-ally">味方</div>
         </div>
-        <p class="mini-label">敵の弾も、爆発も、コピーできる。</p>
-        <h1 id="overlay-title">COPY<span>WAR</span></h1>
-        <p id="overlay-text" class="overlay-text">敵の弾をコピーして、敵の近くに貼り付けろ。<br>爆弾も、弾幕も、敵自身も増やせる。</p>
-        <div class="instructions">
-          <div><b>01</b><span>敵の弾を<strong>タップ</strong></span></div>
-          <div><b>02</b><span>敵の手前を<strong>タップ</strong>して貼る</span></div>
-          <div><b>03</b><span>ドラッグでまとめてコピー</span></div>
-        </div>
-        <button id="overlay-button" class="start-button" type="button">ゲームを始める <span>→</span></button>
-        <p class="note">敵を倒すとコアが少し修復する。</p>
+        <h1 id="overlay-title">敵をコピーして、<br><em>味方にしろ。</em></h1>
+        <p id="overlay-description">強敵ほど、奪えば強い。<br>指で敵を引っ張り、好きな場所に味方を増やそう。</p>
+        <button type="button" id="start">バトル開始 <span>→</span></button>
+        <p class="intro-footnote">味方を増やし、上の敵拠点を破壊せよ。</p>
       </div>
     </div>
   </main>
