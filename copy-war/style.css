@@ -51,3 +51,45 @@ button:focus-visible{outline:3px solid #a8f6ff;outline-offset:3px}
 @media(max-height:710px){.hud{height:42px}.enemy-header,.friend-header{height:30px}.control{height:54px}.control-text strong{font-size:11px}.control-text span{font-size:9px}.intro-card{padding:17px 22px}.intro-graphic{height:90px}.intro-enemy,.intro-ally{width:49px;height:49px}.intro-card h1{font-size:26px}.intro-card p{margin-bottom:12px;font-size:12px}#start{height:47px}}
 .stage-line{height:4px;align-self:stretch;background:#1d3247;overflow:hidden;border-radius:4px;flex-shrink:0;margin:0 7px 4px}.stage-line span{display:block;width:0;height:100%;background:linear-gradient(90deg,#88f4fe,#ffdc9b);transition:width 450ms ease}.enemy-header .faction{font-size:11px}.enemy-header .faction small{font-size:9px}
 .hp-bar.ally div.low{background:linear-gradient(90deg,#d55568,#ffb68a);box-shadow:0 0 8px #e86b60a0}
+/* Between-expedition campaign UI. Keep all upgrades outside the active battlefield. */
+#landing[hidden],#workshop[hidden]{display:none}
+.intro-card{max-height:calc(100dvh - 30px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.intro-graphic{height:65px;gap:15px}
+.intro-enemy,.intro-ally{height:43px;width:49px;border-radius:12px;font-size:14px}
+.intro-arrow{font-size:25px}
+.intro-card h1{font-size:26px;margin:2px 0 4px;line-height:1.24}
+.intro-card p{margin:0 0 12px;line-height:1.55;font-size:12px}
+.chapter-selector{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:11px 0 10px}
+.chapter-selector button{color:#eaf7fe;background:#1b3850;border:1px solid #42677c;border-radius:9px;height:45px;padding:3px 5px;font-size:11px;font-weight:800;text-align:center;white-space:nowrap}
+.chapter-selector button.chosen{border:2px solid #8ceaf5;background:#2b5c70;box-shadow:0 0 12px #70e3f028}
+.chapter-selector button.completed{color:#c8f1d8}
+.chapter-selector button:disabled{color:#748a9b;border-color:#294055;background:#16283b;opacity:.74;cursor:default}
+.meta-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:7px 0 12px}
+.wallet{font-size:14px;font-weight:900;color:#ffe7a1;white-space:nowrap}
+.wallet strong{font-size:19px;font-variant-numeric:tabular-nums}
+#show-upgrades,.workshop-done,#back{background:#25495f;color:#aaf4fa;border:1px solid #5aa3b8;border-radius:9px;font-weight:900}
+#show-upgrades{height:39px;padding:0 14px;font-size:12px}
+#start{height:50px;font-size:16px}
+.intro-card .intro-footnote{margin:9px 0 0;font-size:10px}
+.workshop-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#back{height:34px;padding:0 12px;font-size:12px}
+#workshop h2{font-size:27px;margin:16px 0 7px;letter-spacing:-1px}
+#workshop p.workshop-lead{font-size:12px;color:#c4dce9;margin:0 0 16px}
+.persist-mark{font-size:10px;color:#9abbce}
+.upgrade-list{display:flex;flex-direction:column;gap:9px;margin:13px 0 18px}
+.upgrade-card{display:flex;align-items:center;gap:8px;background:#142c42;border:1px solid #33566c;border-radius:12px;padding:12px 11px}
+.upgrade-info{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.upgrade-info strong{font-size:13px;letter-spacing:.1px}
+.upgrade-info small{font-size:11px;line-height:1.45;color:#9fc2d1}
+.upgrade-card button{flex-shrink:0;min-width:64px;height:38px;background:#8aeef8;color:#143347;border:0;border-radius:9px;font-size:12px;font-weight:900}
+.upgrade-card button:disabled{background:#28465b;color:#82a0b2}
+.workshop-done{width:100%;height:47px}
+@media(max-height:740px){
+  .intro-card{padding:17px 19px}
+  .intro-graphic{display:none}
+  .chapter-selector button{height:42px}
+  .intro-card h1{font-size:25px;margin:11px 0 4px}
+  .intro-card p{margin-bottom:8px}
+  .meta-row{margin:6px 0 9px}
+  #start{height:46px}
+}

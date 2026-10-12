@@ -1,4 +1,6 @@
-import { STAGES } from './progression.mjs';
+import { STAGES, CHAPTERS } from './progression.mjs';
+import { SAVE_KEY, UPGRADES, newProgress, sanitizeProgress, buyUpgrade,
+  upgradeCost, settleExpedition } from './meta.mjs';
 import {
   SIZE, TYPES, createBattle, updateBattle, findCopyTarget, copyEnemy, previewCopyLocation,
 } from './core.mjs';
@@ -26,9 +28,20 @@ const ROLE_HINTS = Object.freeze({
   titan:'巨大地震で敵陣を一気に制圧',
   raider:'出現直後に敵の背後へ突進',
   flier:'飛行しながら後衛を攻撃',
+  cannon:'着地直後に砲撃、密集した敵を撃破',
+  summoner:'倒されるまで新しい兵士を召喚',
 });
 
-let battle = createBattle();
+function readProgress(){
+  try { return sanitizeProgress(JSON.parse(localStorage.getItem(SAVE_KEY))); }
+  catch { return newProgress(); }
+}
+function saveProgress(){
+  try { localStorage.setItem(SAVE_KEY,JSON.stringify(progress)); }
+  catch { /* The game remains playable when storage is disabled. */ }
+}
+let progress = readProgress();
+let battle = createBattle(19,{chapter:progress.selectedChapter,upgrades:progress.levels});
 let running = false;
 let lastTime = 0;
 let uiTime = -1;
@@ -39,6 +52,11 @@ let toastDeadline = 0;
 let audio = null;
 let shake = 0;
 let slowFrames = 0;
+const landing=document.querySelector('#landing');
+const workshop=document.querySelector('#workshop');
+const chapterButtons=[...document.querySelectorAll('[data-chapter]')];
+const workshopButton=document.querySelector('#show-upgrades');
+const upgradeList=document.querySelector('#upgrade-list');
 
 /** Unlock the game sounds only after a deliberate player gesture. */
 function unlockAudio() {
@@ -81,10 +99,74 @@ function notify(message, seconds = 1.6) {
   toast.classList.add('show');
 }
 
+/** Main between-run menu: three-stage expeditions and deliberately small permanent upgrades. */
+function renderMeta(){
+  document.querySelector('#crystals').textContent=progress.crystals;
+  document.querySelector('#crystals-workshop').textContent=progress.crystals;
+  document.querySelector('#chapter-subtitle').textContent=
+    CHAPTERS[progress.selectedChapter].subtitle+' · 3ステージ';
+  chapterButtons.forEach((button,i)=>{
+    const unlocked=i<=progress.unlockedChapter;
+    button.disabled=!unlocked;
+    button.classList.toggle('chosen',progress.selectedChapter===i);
+    button.classList.toggle('completed',progress.completed.includes(i));
+    button.textContent=(unlocked ? progress.completed.includes(i)?'✓':'◆' : '🔒')
+      +' 第'+(i+1)+'章 '+CHAPTERS[i].name;
+  });
+  upgradeList.replaceChildren();
+  for(const spec of UPGRADES){
+    const rank=progress.levels[spec.id];
+    const cost=upgradeCost(spec,rank);
+    const card=document.createElement('div');
+    card.className='upgrade-card';
+    const info=document.createElement('div');
+    info.className='upgrade-info';
+    const title=document.createElement('strong');
+    title.textContent=spec.name+'　Lv '+rank+'/'+spec.max;
+    const description=document.createElement('small');
+    description.textContent=spec.detail;
+    info.append(title,description);
+    const action=document.createElement('button');
+    action.type='button';
+    action.textContent=cost===null?'MAX':'◆ '+cost;
+    action.disabled=cost===null||progress.crystals<cost;
+    action.dataset.upgrade=spec.id;
+    card.append(info,action);
+    upgradeList.append(card);
+  }
+}
+function openWorkshop(){
+  landing.hidden=true;workshop.hidden=false;
+  renderMeta();
+}
+function closeWorkshop(){
+  workshop.hidden=true;landing.hidden=false;
+  renderMeta();
+}
+chapterButtons.forEach(button=>button.addEventListener('click',()=>{
+  const chapter=Number(button.dataset.chapter);
+  if(chapter>progress.unlockedChapter)return;
+  progress.selectedChapter=chapter;
+  saveProgress();renderMeta();
+}));
+workshopButton.addEventListener('click',openWorkshop);
+document.querySelector('#back').addEventListener('click',closeWorkshop);
+document.querySelector('#workshop-done').addEventListener('click',closeWorkshop);
+upgradeList.addEventListener('click',event=>{
+  const button=event.target.closest('button[data-upgrade]');
+  if(!button)return;
+  const purchase=buyUpgrade(progress,button.dataset.upgrade);
+  if(!purchase.ok)return;
+  progress=purchase.progress;saveProgress();renderMeta();
+  beep(540,.15,.04,'triangle',1.5);
+});
+renderMeta();
+
 /** Reset the scene and begin the autonomous fight without a separate tutorial level. */
 function start() {
   unlockAudio();
-  battle = createBattle(Math.floor(Math.random() * 10000) + 1);
+  battle = createBattle(Math.floor(Math.random() * 10000) + 1,
+    {chapter:progress.selectedChapter,upgrades:progress.levels});
   running = true;
   drag = null;
   pendingSourceId = null;
@@ -103,13 +185,20 @@ function finish() {
   pendingSourceId = null;
   drag = null;
   const won = battle.result === 'won';
+  const settlement=settleExpedition(progress,battle);
+  progress=settlement.progress;
+  saveProgress();
   document.querySelector('#overlay-title').innerHTML = won
-    ? '敵の拠点を<br><em>制圧した！</em>'
+    ? battle.chapter===CHAPTERS.length-1
+      ? '全12ステージ<br><em>完全制覇！</em>'
+      : '第'+(battle.chapter+1)+'章<br><em>突破！</em>'
     : '進軍失敗…<br><em>再挑戦しよう。</em>';
   document.querySelector('#overlay-description').innerHTML =
     '突破 ' + battle.secured.length + '/3　／　コピー ' + battle.copied + '体<br>' +
-    (won ? '奪った戦力で、敵の軍勢を上回った。' : '敵の強さを、もっと味方に取り込もう。');
-  button.innerHTML = 'もう一度プレイ <span>→</span>';
+    '◆ 結晶 +'+settlement.reward+' 獲得'+
+    (won && battle.chapter<CHAPTERS.length-1 ? '　次の章が解放！' : '');
+  button.innerHTML = '選んだ章へ出撃 <span>→</span>';
+  renderMeta();
   overlay.hidden = false;
   beep(won ? 540 : 150, .42, .09, 'sawtooth', won ? 2 : .3);
 }
@@ -120,8 +209,9 @@ function updateHud(force = false) {
   if (stamp === uiTime && !force) return;
   uiTime = stamp;
   timeText.textContent = Math.max(0, Math.ceil(battle.timeLimit - battle.time));
-  document.querySelector('#red-label').textContent = `防衛線 ${battle.stage+1}/${STAGES.length}・${STAGES[battle.stage].name}`;
-  document.querySelector('#stage-progress').style.width = `${(battle.secured.length / STAGES.length) * 100}%`;
+  const globalStage=battle.chapter*3+battle.stage;
+  document.querySelector('#red-label').textContent = `${globalStage+1}/${STAGES.length}・${STAGES[globalStage].name}`;
+  document.querySelector('#stage-progress').style.width = `${((battle.chapter*3+battle.secured.length) / STAGES.length) * 100}%`;
   const alliedUnits = battle.units.filter(u => u.side === 'blue').length;
   allyHealth.style.width = battle.commandMorale + '%';
   allyHealth.classList.toggle('low', battle.commandMorale < 30);
@@ -149,6 +239,11 @@ function handleEvents() {
     if (event.kind === 'clone') {
       beep(event.type === 'titan' ? 160 : 460, .21, .06, 'triangle', 2.25);
       notify(TYPES[event.type].label + 'が味方になった！', 1.0);
+    } else if (event.kind === 'resonance') {
+      notify('共鳴衝撃！コピーがさらに強くなる',1.4);
+      beep(300,.3,.075,'triangle',2.1);
+    } else if (event.kind === 'summon' && event.side === 'blue') {
+      beep(450,.2,.04,'triangle',1.25);
     } else if (event.kind === 'burst-heal') {
       beep(650, .21, .055, 'sine', 1.7);
     } else if (event.kind === 'morale-low') {
@@ -255,8 +350,13 @@ document.addEventListener('visibilitychange', () => { lastTime = performance.now
 /** Draw a blurred ground vignette and lane markers for battlefield geography. */
 function drawTerrain(t) {
   const g = ctx.createLinearGradient(0, 0, 0, SIZE.height);
-  g.addColorStop(0, '#463b4a'); g.addColorStop(.32, '#38434c');
-  g.addColorStop(.65, '#344b52'); g.addColorStop(1, '#2b4e59');
+  const palettes=[['#463b4a','#38434c','#344b52','#2b4e59'],
+    ['#364c6d','#426d84','#387e91','#305a7e'],
+    ['#554043','#564d4b','#596058','#3b4a56'],
+    ['#35294c','#363259','#2a4762','#1c395a']];
+  const colors=palettes[battle.chapter];
+  g.addColorStop(0,colors[0]);g.addColorStop(.32,colors[1]);
+  g.addColorStop(.65,colors[2]);g.addColorStop(1,colors[3]);
   ctx.fillStyle = g; ctx.fillRect(0, 0, SIZE.width, SIZE.height);
 
   ctx.fillStyle = 'rgba(10,22,32,.17)';
@@ -368,6 +468,7 @@ function drawUnit(u, t, ghost = false) {
     circle(0, 1, r);
   }
   ctx.shadowBlur = 0;
+  if(ally && u.powerScale>1){ctx.strokeStyle='#ffe39e';ctx.lineWidth=2;circle(0,1,r+4,false);}
   ctx.strokeStyle = ally ? '#b7f8ff' : '#ffd0b0';ctx.lineWidth = isLarge ? 3 : 2;
   circle(0, 1, r, false);
 
@@ -402,6 +503,14 @@ function drawUnit(u, t, ghost = false) {
       ctx.beginPath();ctx.moveTo(-r*.8,-r*.4);ctx.lineTo(-r*1.23,-r*1.5);ctx.lineTo(-r*.2,-r*.9);ctx.fill();
       ctx.beginPath();ctx.moveTo(r*.8,-r*.4);ctx.lineTo(r*1.23,-r*1.5);ctx.lineTo(r*.2,-r*.9);ctx.fill();
     }
+  } else if (u.type === 'cannon') {
+    ctx.fillStyle=ally?'#8df1ff':'#f9bb92';
+    ctx.fillRect(-r*.8,-r*1.06,r*1.6,r*.7);
+    ctx.fillStyle='#303a4b';ctx.fillRect(-r*.3,-r*1.4,r*.6,r*.7);
+  } else if (u.type === 'summoner') {
+    ctx.fillStyle=ally?'#b4f9ff':'#dfb8ff';
+    ctx.beginPath();ctx.moveTo(-r*.92,-r*.4);ctx.lineTo(0,-r*1.65);ctx.lineTo(r*.92,-r*.4);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#f4e0ff';ctx.lineWidth=2;circle(r*.85,-r*.7,r*.48,false);
   } else if (u.type === 'mage') {
     ctx.fillStyle = '#cfb4f8';ctx.beginPath();
     ctx.moveTo(-r*.85,-r*.46);ctx.lineTo(0,-r*1.8);ctx.lineTo(r*.83,-r*.46);ctx.closePath();ctx.fill();
@@ -487,7 +596,7 @@ function drawDrag() {
 
 /** Render an initial in-world gesture arrow so instructions match actual objects. */
 function drawPrompt(t) {
-  if (!running || battle.copied > 0 || drag || pendingSourceId !== null || battle.time > 10) return;
+  if (!running || battle.copied > 0 || drag || pendingSourceId !== null || battle.time > 10 || battle.chapter!==0) return;
   const source = battle.units.find(u => u.side === 'red' && u.type === 'guardian');
   if (!source) return;
   ctx.save();ctx.globalAlpha=.65+Math.sin(t*3)*.20;
@@ -515,7 +624,7 @@ function render(t) {
   drawGate(battle.gateRed,'red',t);
   drawGate(battle.gateBlue,'blue',t);
   for (const gate of battle.gates) {
-    if (gate.index < battle.stage) {
+    if (gate.index < battle.chapter*3 + battle.stage) {
       ctx.save();ctx.globalAlpha=.24;
       drawGate(gate,'red',t);ctx.restore();
     }

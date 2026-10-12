@@ -16,7 +16,7 @@
     </header>
     <section class="body">
       <div class="enemy-header">
-        <div class="faction"><span class="red-icon">◆</span> <span id="red-label">防衛線 1/3・外郭防衛線</span> <small id="red-count">6体</small></div>
+        <div class="faction"><span class="red-icon">◆</span> <span id="red-label">防衛線 1/12・外郭防衛線</span> <small id="red-count">6体</small></div>
         <div class="hp-wrap"><div class="hp-bar enemy"><div id="enemy-health"></div></div></div>
       </div>
       <div class="stage-line"><span id="stage-progress"></span></div>
@@ -36,16 +36,34 @@
     </section>
     <div id="overlay" class="overlay">
       <div class="intro-card">
-        <div class="eyebrow">ENEMY → ALLY</div>
-        <div class="intro-graphic">
-          <div class="intro-enemy">敵</div>
-          <div class="intro-arrow">⤵</div>
-          <div class="intro-ally">味方</div>
-        </div>
-        <h1 id="overlay-title">敵をコピーして、<br><em>味方にしろ。</em></h1>
-        <p id="overlay-description">強敵ほど、奪えば強い。<br>指で敵を引っ張り、好きな場所に味方を増やそう。</p>
-        <button type="button" id="start">バトル開始 <span>→</span></button>
-        <p class="intro-footnote">3つの防衛線を突破して、最終要塞を落とせ。</p>
+        <section id="landing">
+          <div class="eyebrow">COPY WAR · 4つの戦線</div>
+          <div class="intro-graphic" aria-hidden="true">
+            <div class="intro-enemy">敵</div><div class="intro-arrow">⤵</div><div class="intro-ally">味方</div>
+          </div>
+          <h1 id="overlay-title">敵をコピーして、<br><em>味方にしろ。</em></h1>
+          <p id="overlay-description">全12ステージ。敵を奪い、進軍し、軍勢を強化しよう。</p>
+          <div class="chapter-selector" id="chapters" aria-label="出撃する章">
+            <button type="button" data-chapter="0">第1章　辺境戦線</button>
+            <button type="button" data-chapter="1">第2章　天空回廊</button>
+            <button type="button" data-chapter="2">第3章　機械工廠</button>
+            <button type="button" data-chapter="3">第4章　深淵中枢</button>
+          </div>
+          <div class="meta-row">
+            <span class="wallet">◆ <strong id="crystals">0</strong> 結晶</span>
+            <button type="button" id="show-upgrades">永続強化 <span>→</span></button>
+          </div>
+          <button type="button" id="start">出撃する <span>→</span></button>
+          <p class="intro-footnote" id="chapter-subtitle">各章3ステージ。クリアで次の章を解放。</p>
+        </section>
+        <section id="workshop" hidden>
+          <div class="workshop-head"><div class="eyebrow">COPY LAB</div><button type="button" id="back">← 戻る</button></div>
+          <h2>コピー研究所</h2>
+          <p class="workshop-lead">敵をコピーして得た結晶で、次の戦いをもっと強く。</p>
+          <div class="meta-row"><span class="wallet">◆ <strong id="crystals-workshop">0</strong> 結晶</span><span class="persist-mark">端末に自動保存</span></div>
+          <div class="upgrade-list" id="upgrade-list"></div>
+          <button type="button" class="workshop-done" id="workshop-done">戦場へ戻る →</button>
+        </section>
       </div>
     </div>
   </main>
